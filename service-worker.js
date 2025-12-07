@@ -1,18 +1,16 @@
-const CACHE_NAME = "mood-pwa-v2";
+const CACHE_NAME = "mood-pwa-v4";
 const ASSETS = [
   "./",
-  "./index.html",
   "./style.css",
   "./app.js",
   "./manifest.webmanifest",
-  "https://cdn.jsdelivr.net/npm/chart.js"
+  "https://cdn.jsdelivr.net/npm/chart.js",
+  "https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns",
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
 });
 
@@ -28,14 +26,21 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Network-first for navigation (HTML), cache-first for others
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 
-  // Cache-first for everything in ASSETS.
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(() => caches.match("./"))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
-      return fetch(request).catch(() => cached);
+      return fetch(request);
     })
   );
 });
