@@ -514,28 +514,77 @@ const INVENTORIES = {
     severityThresholds: [0, 2, 5, 9, 14],
     type: "shaps_dichotomous",
     questions: [
-      { id: "shaps_q1", text: "Enjoying a favourite TV or radio programme", reverse: false },
-      { id: "shaps_q2", text: "Enjoying being with family or close friends", reverse: true },
-      { id: "shaps_q3", text: "Finding pleasure in hobbies or pastimes", reverse: false },
-      { id: "shaps_q4", text: "Enjoying a favourite meal", reverse: true },
-      { id: "shaps_q5", text: "Enjoying a warm bath or refreshing shower", reverse: true },
       {
-        id: "shaps_q6",
-        text: "Enjoying pleasant smells (flowers, sea air, fresh bread, etc.)",
+        id: "shaps_q1",
+        text: "Enjoying a favourite TV or radio programme",
         reverse: false,
       },
-      { id: "shaps_q7", text: "Enjoying other people’s smiling faces", reverse: true },
-      { id: "shaps_q8", text: "Enjoying looking smart after making an effort", reverse: false },
-      { id: "shaps_q9", text: "Enjoying reading (book, magazine, news)", reverse: true },
-      { id: "shaps_q10", text: "Enjoying a favourite drink (tea, coffee, etc.)", reverse: false },
+      {
+        id: "shaps_q2",
+        text: "Enjoying being with family or close friends",
+        reverse: true,
+      },
+      {
+        id: "shaps_q3",
+        text: "Finding pleasure in hobbies or pastimes",
+        reverse: false,
+      },
+      {
+        id: "shaps_q4",
+        text: "Enjoying a favourite meal",
+        reverse: true,
+      },
+      {
+        id: "shaps_q5",
+        text: "Enjoying a warm bath or refreshing shower",
+        reverse: true,
+      },
+      {
+        id: "shaps_q6",
+        text:
+          "Enjoying pleasant smells (flowers, sea air, fresh bread, etc.)",
+        reverse: false,
+      },
+      {
+        id: "shaps_q7",
+        text: "Enjoying other people’s smiling faces",
+        reverse: true,
+      },
+      {
+        id: "shaps_q8",
+        text: "Enjoying looking smart after making an effort",
+        reverse: false,
+      },
+      {
+        id: "shaps_q9",
+        text: "Enjoying reading (book, magazine, news)",
+        reverse: true,
+      },
+      {
+        id: "shaps_q10",
+        text: "Enjoying a favourite drink (tea, coffee, etc.)",
+        reverse: false,
+      },
       {
         id: "shaps_q11",
         text: "Finding pleasure in small things (sunny day, call from a friend)",
         reverse: false,
       },
-      { id: "shaps_q12", text: "Enjoying a beautiful view or landscape", reverse: false },
-      { id: "shaps_q13", text: "Getting pleasure from helping others", reverse: false },
-      { id: "shaps_q14", text: "Feeling pleasure when praised by others", reverse: false },
+      {
+        id: "shaps_q12",
+        text: "Enjoying a beautiful view or landscape",
+        reverse: false,
+      },
+      {
+        id: "shaps_q13",
+        text: "Getting pleasure from helping others",
+        reverse: false,
+      },
+      {
+        id: "shaps_q14",
+        text: "Feeling pleasure when praised by others",
+        reverse: false,
+      },
     ].map((q) => ({
       ...q,
       options: [
@@ -632,6 +681,9 @@ const eventDateInput = document.getElementById("event-date");
 const eventDescInput = document.getElementById("event-description");
 const addEventBtn = document.getElementById("add-event-btn");
 const eventStatusEl = document.getElementById("event-status");
+
+// AVG toggle
+const avgToggle = document.getElementById("avg-toggle");
 
 let entries = loadEntries();
 let currentInventoryId = null;
@@ -739,6 +791,7 @@ saveTestBtn.addEventListener("click", () => {
   const rawScore = computeScore(currentInventoryId, answers);
   const norm = severityNormalized(currentInventoryId, rawScore);
   const now = new Date();
+
   const entry = {
     kind: "test",
     id: `entry_${now.getTime()}`,
@@ -780,7 +833,6 @@ addEventBtn.addEventListener("click", () => {
     return;
   }
 
-  // Use local noon for that date
   const date = new Date(dateStr + "T12:00:00");
   const now = new Date();
 
@@ -801,7 +853,83 @@ addEventBtn.addEventListener("click", () => {
   eventDescInput.value = "";
 });
 
-// ==== HISTORY TABLE ====
+// ==== HISTORY TABLE (expandable, deletable) ====
+
+function buildDetailsContent(entry) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "details-expanded";
+  const dt = new Date(entry.timestamp).toLocaleString();
+
+  if (entry.kind === "event") {
+    wrapper.innerHTML = `
+      <div><strong>Event:</strong> ${entry.description || ""}</div>
+      <div><strong>Date/time:</strong> ${dt}</div>
+    `;
+  } else {
+    const inv = INVENTORIES[entry.inventoryId];
+    const invName = inv ? inv.name : entry.inventoryName || entry.inventoryId;
+    const norm = (entry.severityNormalized ?? 0).toFixed(3);
+
+    wrapper.innerHTML = `
+      <div><strong>Inventory:</strong> ${invName}</div>
+      <div><strong>Date/time:</strong> ${dt}</div>
+      <div><strong>Raw score:</strong> ${entry.rawScore}</div>
+      <div><strong>Normalized severity:</strong> ${norm}</div>
+    `;
+
+    if (inv && Array.isArray(entry.answers)) {
+      const list = document.createElement("ul");
+      list.className = "answers-list";
+      entry.answers.forEach((val, idx) => {
+        const q = inv.questions[idx];
+        const li = document.createElement("li");
+        let optLabel = "";
+        if (q && q.options) {
+          const match = q.options.find(
+            (o) => Number(o.value) === Number(val)
+          );
+          if (match) optLabel = match.label;
+        }
+        li.textContent = q
+          ? `${idx + 1}. ${q.text} → ${optLabel || val}`
+          : `Q${idx + 1}: ${val}`;
+        list.appendChild(li);
+      });
+      wrapper.appendChild(list);
+    }
+  }
+
+  const delBtn = document.createElement("button");
+  delBtn.textContent = "Delete entry";
+  delBtn.className = "danger-btn";
+  delBtn.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    if (!confirm("Delete this entry?")) return;
+    entries = entries.filter((x) => x.id !== entry.id);
+    saveEntries(entries);
+    renderHistory();
+    updateChart();
+  });
+
+  wrapper.appendChild(delBtn);
+  return wrapper;
+}
+
+function toggleHistoryRow(entry, rowEl) {
+  const next = rowEl.nextSibling;
+  if (next && next.classList && next.classList.contains("expansion-row")) {
+    next.remove();
+    return;
+  }
+
+  const detailsTr = document.createElement("tr");
+  detailsTr.className = "expansion-row";
+  const td = document.createElement("td");
+  td.colSpan = 4;
+  td.appendChild(buildDetailsContent(entry));
+  detailsTr.appendChild(td);
+  rowEl.parentNode.insertBefore(detailsTr, rowEl.nextSibling);
+}
 
 function renderHistory() {
   historyBodyEl.innerHTML = "";
@@ -826,7 +954,8 @@ function renderHistory() {
       sc.textContent = "—";
       det.textContent = e.description || "";
     } else {
-      tn.textContent = e.inventoryName;
+      tn.textContent =
+        e.inventoryName || INVENTORIES[e.inventoryId]?.name || e.inventoryId;
       sc.textContent = e.rawScore;
       det.textContent = `answers: [${(e.answers || []).join(", ")}]`;
     }
@@ -834,6 +963,9 @@ function renderHistory() {
     tr.appendChild(tn);
     tr.appendChild(sc);
     tr.appendChild(det);
+
+    tr.addEventListener("click", () => toggleHistoryRow(e, tr));
+
     historyBodyEl.appendChild(tr);
   }
 }
@@ -848,7 +980,6 @@ const COLOR_MAP = {
   shaps: "#a855f7",
 };
 
-// Legend label mapping (BURNS / SHAPS acronyms)
 const LABEL_MAP = {
   phq9: "PHQ-9",
   madrs: "MADRS",
@@ -857,15 +988,31 @@ const LABEL_MAP = {
   shaps: "SHAPS",
 };
 
-// Plugin to draw event lines
+function hexToRgba(hex, alpha) {
+  if (!hex) return `rgba(249, 115, 22, ${alpha})`;
+  hex = hex.replace("#", "");
+  if (hex.length === 3) {
+    hex = hex
+      .split("")
+      .map((c) => c + c)
+      .join("");
+  }
+  const num = parseInt(hex, 16);
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// Plugin to draw event vertical lines
 const eventLinesPlugin = {
   id: "eventLines",
-  afterDraw(chart, args, opts) {
+  afterDraw(chart) {
     const events = chart.$events || [];
     if (!events.length) return;
+
     const { ctx, chartArea, scales } = chart;
     const xScale = scales.x;
-
     ctx.save();
     ctx.strokeStyle = "#6b7280";
     ctx.lineWidth = 1;
@@ -913,10 +1060,9 @@ const chart = new Chart(ctx, {
       legend: {
         labels: {
           color: "#e5e7eb",
-          // hide the "Events" dataset from the legend
           filter: (item, data) => {
             const ds = data.datasets[item.datasetIndex];
-            return !ds.isEvent;
+            return !ds.isEvent; // hide Events dataset
           },
         },
       },
@@ -924,10 +1070,17 @@ const chart = new Chart(ctx, {
         callbacks: {
           label: (ctx) => {
             const d = ctx.raw;
+
             if (d && d.eventDescription) {
               const dt = new Date(d.x);
               return `Event: ${d.eventDescription} (${dt.toLocaleDateString()})`;
             }
+
+            if (d && d.isAvg) {
+              const dt = new Date(d.x);
+              return `AVG: ${d.y.toFixed(2)} (${dt.toLocaleDateString()})`;
+            }
+
             if (!d || !d.inventoryId) return "";
             const invId = d.inventoryId;
             const label =
@@ -950,13 +1103,16 @@ function updateChart() {
     .filter((c) => c.checked)
     .map((c) => c.value);
 
-  // Test score datasets
+  const avgActive = !!(avgToggle && avgToggle.checked);
+
+  // Score datasets
   const scoreDatasets = activeIds.map((invId) => {
     const inv = INVENTORIES[invId];
+    const baseColor = COLOR_MAP[invId] || "#f97316";
+    const color = avgActive ? hexToRgba(baseColor, 0.15) : baseColor;
+
     const data = entries
-      .filter(
-        (e) => e.kind !== "event" && e.inventoryId === invId
-      )
+      .filter((e) => e.kind !== "event" && e.inventoryId === invId)
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
       .map((e) => ({
         x: new Date(e.timestamp),
@@ -968,18 +1124,18 @@ function updateChart() {
     return {
       label: LABEL_MAP[invId] || inv.name,
       data,
-      borderColor: COLOR_MAP[invId] || "#f97316",
-      backgroundColor: COLOR_MAP[invId] || "#f97316",
+      borderColor: color,
+      backgroundColor: color,
     };
   });
 
-  // Event markers dataset (for tooltip hit area)
+  // Events dataset (for tooltip hit area)
   const events = entries.filter((e) => e.kind === "event");
   let eventDataset = null;
   if (events.length) {
     const eventPoints = events.map((ev) => ({
       x: new Date(ev.timestamp),
-      y: 0, // plotted at bottom; actual vertical line is drawn by plugin
+      y: 0,
       eventDescription: ev.description,
     }));
     eventDataset = {
@@ -993,18 +1149,61 @@ function updateChart() {
     };
   }
 
+  // AVG dataset across all active inventories (by day)
+  let avgDataset = null;
+  if (avgActive && activeIds.length > 0) {
+    const byDay = new Map(); // key: YYYY-MM-DD -> {sum, count}
+    entries
+      .filter(
+        (e) => e.kind !== "event" && activeIds.includes(e.inventoryId)
+      )
+      .forEach((e) => {
+        const d = new Date(e.timestamp);
+        const key = d.toISOString().slice(0, 10);
+        const norm = e.severityNormalized ?? 0;
+        if (!byDay.has(key)) byDay.set(key, { sum: 0, count: 0 });
+        const obj = byDay.get(key);
+        obj.sum += norm;
+        obj.count += 1;
+      });
+
+    const avgData = Array.from(byDay.entries())
+      .map(([key, { sum, count }]) => ({
+        x: new Date(key + "T12:00:00"),
+        y: sum / count,
+        isAvg: true,
+      }))
+      .sort((a, b) => a.x - b.x);
+
+    if (avgData.length) {
+      avgDataset = {
+        label: "AVG",
+        data: avgData,
+        borderColor: "#facc15",
+        backgroundColor: "#facc15",
+        borderWidth: 2,
+        pointRadius: 3,
+      };
+    }
+  }
+
   chart.$events = events;
 
-  chart.data.datasets = eventDataset
-    ? [...scoreDatasets, eventDataset]
-    : scoreDatasets;
+  const datasets = [...scoreDatasets];
+  if (avgDataset) datasets.push(avgDataset);
+  if (eventDataset) datasets.push(eventDataset);
 
+  chart.data.datasets = datasets;
   chart.update();
 }
 
 filterCheckboxes.forEach((cb) =>
   cb.addEventListener("change", updateChart)
 );
+
+if (avgToggle) {
+  avgToggle.addEventListener("change", updateChart);
+}
 
 // ==== EXPORT JSON ====
 
@@ -1025,6 +1224,7 @@ renderHistory();
 updateChart();
 
 // ==== SERVICE WORKER REGISTRATION ====
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
