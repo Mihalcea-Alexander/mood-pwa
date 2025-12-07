@@ -1,90 +1,83 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2867
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\margl1440\margr1440\vieww11520\viewh8400\viewkind0
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mood Inventories</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-\f0\fs24 \cf0 <!DOCTYPE html>\
-<html lang="en">\
-<head>\
-  <meta charset="UTF-8" />\
-  <title>Mood Inventories</title>\
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\
-\
-  <!-- PWA manifest -->\
-  <link rel="manifest" href="manifest.webmanifest" />\
-  <meta name="theme-color" content="#111827" />\
-\
-  <!-- Basic styles -->\
-  <link rel="stylesheet" href="style.css" />\
-\
-  <!-- Chart.js from CDN (cached by service worker for offline use) -->\
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>\
-</head>\
-<body>\
-  <header>\
-    <h1>Mood Inventory Logger</h1>\
-    <p>PHQ-9 \'b7 MADRS \'b7 BDI-II \'b7 Burns \'b7 SHAPS</p>\
-  </header>\
-\
-  <main>\
-    <!-- Test selection and form -->\
-    <section class="card">\
-      <h2>Take a Test</h2>\
-      <label for="test-select">Select inventory:</label>\
-      <select id="test-select">\
-        <option value="phq9">PHQ-9</option>\
-        <option value="madrs">MADRS</option>\
-        <option value="bdi2">BDI-II</option>\
-        <option value="burns">Burns Depression Checklist</option>\
-        <option value="shaps">Snaith-Hamilton Pleasure Scale</option>\
-      </select>\
-\
-      <div id="questions-container"></div>\
-\
-      <button id="submit-test" class="primary-btn">Save Test</button>\
-      <p id="submit-status" class="status"></p>\
-    </section>\
-\
-    <!-- Filters and graph -->\
-    <section class="card">\
-      <h2>Scores Over Time</h2>\
-      <div class="test-filters">\
-        <label><input type="checkbox" class="test-filter" value="phq9" checked /> PHQ-9</label>\
-        <label><input type="checkbox" class="test-filter" value="madrs" checked /> MADRS</label>\
-        <label><input type="checkbox" class="test-filter" value="bdi2" checked /> BDI-II</label>\
-        <label><input type="checkbox" class="test-filter" value="burns" checked /> Burns</label>\
-        <label><input type="checkbox" class="test-filter" value="shaps" checked /> SHAPS</label>\
-      </div>\
-      <canvas id="scores-chart" height="200"></canvas>\
-      <p class="hint">\
-        Y-axis is severity-normalized: a \'93moderate\'94 score on any scale lines up with \'93moderate\'94 on others. Hover points for raw scores.\
-      </p>\
-    </section>\
-\
-    <!-- History table -->\
-    <section class="card">\
-      <h2>History</h2>\
-      <table id="history-table">\
-        <thead>\
-          <tr>\
-            <th>Date/Time</th>\
-            <th>Test</th>\
-            <th>Raw Score</th>\
-            <th>Details</th>\
-          </tr>\
-        </thead>\
-        <tbody id="history-body"></tbody>\
-      </table>\
-    </section>\
-  </main>\
-\
-  <footer>\
-    <button id="export-json" class="secondary-btn">Export data (JSON)</button>\
-    <a id="download-link" style="display:none"></a>\
-  </footer>\
-\
-  <script src="app.js"></script>\
-</body>\
-</html>}
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#111827" />
+
+  <!-- Basic styles -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Chart.js from CDN (cached by service worker for offline use) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Mood Inventory Logger</h1>
+    <p>PHQ-9 · MADRS · BDI-II · Burns · SHAPS</p>
+  </header>
+
+  <main>
+    <!-- Test selection and form -->
+    <section class="card">
+      <h2>Take a Test</h2>
+      <label for="test-select">Select inventory:</label>
+      <select id="test-select">
+        <option value="phq9">PHQ-9</option>
+        <option value="madrs">MADRS</option>
+        <option value="bdi2">BDI-II</option>
+        <option value="burns">Burns Depression Checklist</option>
+        <option value="shaps">Snaith-Hamilton Pleasure Scale</option>
+      </select>
+
+      <div id="questions-container"></div>
+
+      <button id="submit-test" class="primary-btn">Save Test</button>
+      <p id="submit-status" class="status"></p>
+    </section>
+
+    <!-- Filters and graph -->
+    <section class="card">
+      <h2>Scores Over Time</h2>
+      <div class="test-filters">
+        <label><input type="checkbox" class="test-filter" value="phq9" checked /> PHQ-9</label>
+        <label><input type="checkbox" class="test-filter" value="madrs" checked /> MADRS</label>
+        <label><input type="checkbox" class="test-filter" value="bdi2" checked /> BDI-II</label>
+        <label><input type="checkbox" class="test-filter" value="burns" checked /> Burns</label>
+        <label><input type="checkbox" class="test-filter" value="shaps" checked /> SHAPS</label>
+      </div>
+      <canvas id="scores-chart" height="200"></canvas>
+      <p class="hint">
+        Y-axis is severity-normalized: a “moderate” score on any scale lines up with “moderate” on others. Hover points for raw scores.
+      </p>
+    </section>
+
+    <!-- History table -->
+    <section class="card">
+      <h2>History</h2>
+      <table id="history-table">
+        <thead>
+          <tr>
+            <th>Date/Time</th>
+            <th>Test</th>
+            <th>Raw Score</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    <button id="export-json" class="secondary-btn">Export data (JSON)</button>
+    <a id="download-link" style="display:none"></a>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
