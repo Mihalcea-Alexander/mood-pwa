@@ -9,10 +9,10 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#111827" />
 
-  <!-- Basic styles -->
+  <!-- Styles -->
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Chart.js from CDN -->
+  <!-- Chart.js and time adapter -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
@@ -60,6 +60,7 @@
         <label><input type="checkbox" class="test-filter" value="bdi2" checked /> BDI-II</label>
         <label><input type="checkbox" class="test-filter" value="burns" checked /> BURNS</label>
         <label><input type="checkbox" class="test-filter" value="shaps" checked /> SHAPS</label>
+        <label><input type="checkbox" id="avg-toggle" /> AVG</label>
       </div>
       <div class="chart-wrap">
         <canvas id="scores-chart"></canvas>
