@@ -1,4 +1,4 @@
-const CACHE_NAME = "mood-pwa-v1";
+const CACHE_NAME = "mood-pwa-v2";
 const ASSETS = [
   "./",
   "./index.html",
