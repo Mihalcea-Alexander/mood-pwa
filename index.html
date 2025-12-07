@@ -94,6 +94,34 @@
     <!-- History -->
     <section class="card">
       <h2>History</h2>
+
+      <!-- Manual score entry -->
+      <div class="manual-add">
+        <h3>Manual score entry</h3>
+        <div class="manual-row">
+          <label>
+            Test
+            <select id="manual-test-select">
+              <option value="phq9">PHQ-9</option>
+              <option value="madrs">MADRS</option>
+              <option value="bdi2">BDI-II</option>
+              <option value="burns">BURNS</option>
+              <option value="shaps">SHAPS</option>
+            </select>
+          </label>
+          <label>
+            Date
+            <input type="date" id="manual-date" />
+          </label>
+          <label>
+            Raw score
+            <input type="number" id="manual-score" min="0" step="1" />
+          </label>
+          <button id="manual-add-btn" class="secondary-btn">Add</button>
+        </div>
+        <p id="manual-status" class="status"></p>
+      </div>
+
       <table id="history-table">
         <thead>
           <tr>
@@ -110,6 +138,8 @@
 
   <footer>
     <button id="export-json" class="secondary-btn">Export data (JSON)</button>
+    <button id="import-json" class="secondary-btn">Import JSON</button>
+    <input type="file" id="import-file" accept="application/json" style="display:none" />
     <a id="download-link" style="display:none"></a>
   </footer>
 
