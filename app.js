@@ -1,12 +1,4 @@
 // ==== INVENTORY DEFINITIONS ====
-//
-// Question text is paraphrased, structure and scoring follow the originals.
-// Each question has:
-//   id: string
-//   text: string
-//   options: [{ label, value }]
-//
-// For SHAPS we also flag which items are reverse-scored and then convert to 0/1.
 
 const INVENTORIES = {
   phq9: {
@@ -117,7 +109,6 @@ const INVENTORIES = {
     maxTotal: 60,
     severityThresholds: [0, 7, 20, 35, 60],
     type: "simple_sum",
-    // Self-report approximation: 0–6 with brief anchors at 0,2,4,6
     questions: [
       {
         id: "madrs_q1",
@@ -258,7 +249,6 @@ const INVENTORIES = {
     maxTotal: 63,
     severityThresholds: [0, 14, 20, 29, 63],
     type: "simple_sum",
-    // Each item is a 0–3 choice summarizing the original statements.
     questions: [
       {
         id: "bdi2_q1",
@@ -480,31 +470,31 @@ const INVENTORIES = {
     severityThresholds: [0, 5, 10, 25, 50, 75, 100],
     type: "simple_sum",
     questions: [
-      { id: "burns_q1", text: "Feeling sad or down", },
-      { id: "burns_q2", text: "Feeling unhappy or blue", },
-      { id: "burns_q3", text: "Crying or feeling like crying", },
-      { id: "burns_q4", text: "Feeling discouraged", },
-      { id: "burns_q5", text: "Feeling hopeless", },
-      { id: "burns_q6", text: "Low self-esteem", },
-      { id: "burns_q7", text: "Feeling worthless or inadequate", },
-      { id: "burns_q8", text: "Guilt or shame", },
-      { id: "burns_q9", text: "Self-criticism or blaming others", },
-      { id: "burns_q10", text: "Difficulty making decisions", },
-      { id: "burns_q11", text: "Less interest in family/friends/colleagues", },
-      { id: "burns_q12", text: "Feeling lonely", },
-      { id: "burns_q13", text: "Spending less time with others", },
-      { id: "burns_q14", text: "Loss of motivation", },
-      { id: "burns_q15", text: "Less interest in work/activities", },
-      { id: "burns_q16", text: "Avoiding work or activities", },
-      { id: "burns_q17", text: "Less pleasure or satisfaction in life", },
-      { id: "burns_q18", text: "Feeling tired or low energy", },
-      { id: "burns_q19", text: "Trouble sleeping or sleeping too much", },
-      { id: "burns_q20", text: "Appetite changes (less or more)", },
-      { id: "burns_q21", text: "Less interest in sex", },
-      { id: "burns_q22", text: "Worrying about health", },
-      { id: "burns_q23", text: "Any suicidal thoughts", },
-      { id: "burns_q24", text: "Wish you were dead", },
-      { id: "burns_q25", text: "Plans for self-harm", },
+      { id: "burns_q1", text: "Feeling sad or down" },
+      { id: "burns_q2", text: "Feeling unhappy or blue" },
+      { id: "burns_q3", text: "Crying or feeling like crying" },
+      { id: "burns_q4", text: "Feeling discouraged" },
+      { id: "burns_q5", text: "Feeling hopeless" },
+      { id: "burns_q6", text: "Low self-esteem" },
+      { id: "burns_q7", text: "Feeling worthless or inadequate" },
+      { id: "burns_q8", text: "Guilt or shame" },
+      { id: "burns_q9", text: "Self-criticism or blaming others" },
+      { id: "burns_q10", text: "Difficulty making decisions" },
+      { id: "burns_q11", text: "Less interest in family/friends/colleagues" },
+      { id: "burns_q12", text: "Feeling lonely" },
+      { id: "burns_q13", text: "Spending less time with others" },
+      { id: "burns_q14", text: "Loss of motivation" },
+      { id: "burns_q15", text: "Less interest in work/activities" },
+      { id: "burns_q16", text: "Avoiding work or activities" },
+      { id: "burns_q17", text: "Less pleasure or satisfaction in life" },
+      { id: "burns_q18", text: "Feeling tired or low energy" },
+      { id: "burns_q19", text: "Trouble sleeping or sleeping too much" },
+      { id: "burns_q20", text: "Appetite changes (less or more)" },
+      { id: "burns_q21", text: "Less interest in sex" },
+      { id: "burns_q22", text: "Worrying about health" },
+      { id: "burns_q23", text: "Any suicidal thoughts" },
+      { id: "burns_q24", text: "Wish you were dead" },
+      { id: "burns_q25", text: "Plans for self-harm" },
     ].map((q) => ({
       ...q,
       options: [
@@ -520,82 +510,32 @@ const INVENTORIES = {
   shaps: {
     id: "shaps",
     name: "Snaith-Hamilton Pleasure Scale",
-    maxTotal: 14, // 0–14 anhedonia score
+    maxTotal: 14,
     severityThresholds: [0, 2, 5, 9, 14],
     type: "shaps_dichotomous",
-    // reverse: true for the starred items (2,4,5,7,9)
     questions: [
-      {
-        id: "shaps_q1",
-        text: "Enjoying a favourite TV or radio programme",
-        reverse: false,
-      },
-      {
-        id: "shaps_q2",
-        text: "Enjoying being with family or close friends",
-        reverse: true,
-      },
-      {
-        id: "shaps_q3",
-        text: "Finding pleasure in hobbies or pastimes",
-        reverse: false,
-      },
-      {
-        id: "shaps_q4",
-        text: "Enjoying a favourite meal",
-        reverse: true,
-      },
-      {
-        id: "shaps_q5",
-        text: "Enjoying a warm bath or refreshing shower",
-        reverse: true,
-      },
+      { id: "shaps_q1", text: "Enjoying a favourite TV or radio programme", reverse: false },
+      { id: "shaps_q2", text: "Enjoying being with family or close friends", reverse: true },
+      { id: "shaps_q3", text: "Finding pleasure in hobbies or pastimes", reverse: false },
+      { id: "shaps_q4", text: "Enjoying a favourite meal", reverse: true },
+      { id: "shaps_q5", text: "Enjoying a warm bath or refreshing shower", reverse: true },
       {
         id: "shaps_q6",
-        text:
-          "Enjoying pleasant smells (flowers, sea air, fresh bread, etc.)",
+        text: "Enjoying pleasant smells (flowers, sea air, fresh bread, etc.)",
         reverse: false,
       },
-      {
-        id: "shaps_q7",
-        text: "Enjoying other people’s smiling faces",
-        reverse: true,
-      },
-      {
-        id: "shaps_q8",
-        text: "Enjoying looking smart after making an effort",
-        reverse: false,
-      },
-      {
-        id: "shaps_q9",
-        text: "Enjoying reading (book, magazine, news)",
-        reverse: true,
-      },
-      {
-        id: "shaps_q10",
-        text: "Enjoying a favourite drink (tea, coffee, etc.)",
-        reverse: false,
-      },
+      { id: "shaps_q7", text: "Enjoying other people’s smiling faces", reverse: true },
+      { id: "shaps_q8", text: "Enjoying looking smart after making an effort", reverse: false },
+      { id: "shaps_q9", text: "Enjoying reading (book, magazine, news)", reverse: true },
+      { id: "shaps_q10", text: "Enjoying a favourite drink (tea, coffee, etc.)", reverse: false },
       {
         id: "shaps_q11",
         text: "Finding pleasure in small things (sunny day, call from a friend)",
         reverse: false,
       },
-      {
-        id: "shaps_q12",
-        text: "Enjoying a beautiful view or landscape",
-        reverse: false,
-      },
-      {
-        id: "shaps_q13",
-        text: "Getting pleasure from helping others",
-        reverse: false,
-      },
-      {
-        id: "shaps_q14",
-        text: "Feeling pleasure when praised by others",
-        reverse: false,
-      },
+      { id: "shaps_q12", text: "Enjoying a beautiful view or landscape", reverse: false },
+      { id: "shaps_q13", text: "Getting pleasure from helping others", reverse: false },
+      { id: "shaps_q14", text: "Feeling pleasure when praised by others", reverse: false },
     ].map((q) => ({
       ...q,
       options: [
@@ -647,10 +587,7 @@ function severityNormalized(invId, rawScore) {
   return (idx + within) / binCount;
 }
 
-// ==== SHAPS SCORING (0–14 anhedonia) ====
-//
-// Non-reverse items: anhedonia point if Disagree or Strongly disagree.
-// Reverse-scored items: anhedonia point if Agree or Strongly agree.
+// ==== SHAPS SCORING ====
 
 function scoreShaps(questionDefs, numericAnswers) {
   let total = 0;
@@ -666,36 +603,39 @@ function scoreShaps(questionDefs, numericAnswers) {
   return total;
 }
 
-// ==== COMPUTE SCORE FOR ANY INVENTORY ====
-
 function computeScore(invId, numericAnswers) {
   const inv = INVENTORIES[invId];
   if (inv.type === "shaps_dichotomous") {
     return scoreShaps(inv.questions, numericAnswers);
   }
-  // simple sum for PHQ-9, MADRS, BDI-II, Burns
   return numericAnswers.reduce((a, b) => a + (Number(b) || 0), 0);
 }
 
-// ==== UI ELEMENTS ====
+// ==== DOM ELEMENTS ====
 
-const testSelectEl = document.getElementById("test-select");
-const questionsContainerEl = document.getElementById("questions-container");
-const submitBtn = document.getElementById("submit-test");
-const submitStatusEl = document.getElementById("submit-status");
+const homeScreenEl = document.getElementById("home-screen");
+const testScreenEl = document.getElementById("test-screen");
+const testTitleEl = document.getElementById("test-title");
+const testQuestionsEl = document.getElementById("test-questions");
+const testStatusEl = document.getElementById("test-status");
+const saveTestBtn = document.getElementById("save-test-btn");
+const cancelTestBtn = document.getElementById("cancel-test-btn");
+const testLaunchButtons = document.querySelectorAll(".test-launch-btn");
+
 const historyBodyEl = document.getElementById("history-body");
+const filterCheckboxes = document.querySelectorAll(".test-filter");
 const exportBtn = document.getElementById("export-json");
 const downloadLinkEl = document.getElementById("download-link");
-const filterCheckboxes = document.querySelectorAll(".test-filter");
 const ctx = document.getElementById("scores-chart").getContext("2d");
 
 let entries = loadEntries();
+let currentInventoryId = null;
 
-// ==== RENDER QUESTIONS (RADIO BUTTONS) ====
+// ==== RENDER QUESTIONS ====
 
 function renderQuestions(invId) {
   const inv = INVENTORIES[invId];
-  questionsContainerEl.innerHTML = "";
+  testQuestionsEl.innerHTML = "";
 
   inv.questions.forEach((q, index) => {
     const wrapper = document.createElement("div");
@@ -709,7 +649,7 @@ function renderQuestions(invId) {
     const optionsRow = document.createElement("div");
     optionsRow.className = "options-row";
 
-    q.options.forEach((opt, optIndex) => {
+    q.options.forEach((opt) => {
       const label = document.createElement("label");
       label.className = "option-pill";
 
@@ -725,38 +665,77 @@ function renderQuestions(invId) {
       label.appendChild(radio);
       label.appendChild(span);
       optionsRow.appendChild(label);
+
+      radio.addEventListener("change", () => {
+        optionsRow.querySelectorAll(".option-pill").forEach((lab) => {
+          lab.classList.remove("selected");
+        });
+        label.classList.add("selected");
+      });
     });
 
     wrapper.appendChild(optionsRow);
-    questionsContainerEl.appendChild(wrapper);
+    testQuestionsEl.appendChild(wrapper);
   });
 }
 
+// ==== SCREEN SWITCHING ====
+
+function showHomeScreen() {
+  testScreenEl.classList.add("hidden");
+  homeScreenEl.classList.remove("hidden");
+  currentInventoryId = null;
+  testQuestionsEl.innerHTML = "";
+  testStatusEl.textContent = "";
+}
+
+function openTest(invId) {
+  const inv = INVENTORIES[invId];
+  if (!inv) return;
+  currentInventoryId = invId;
+  testTitleEl.textContent = inv.name;
+  testStatusEl.textContent = "";
+  renderQuestions(invId);
+  homeScreenEl.classList.add("hidden");
+  testScreenEl.classList.remove("hidden");
+}
+
+testLaunchButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const invId = btn.getAttribute("data-inv");
+    openTest(invId);
+  });
+});
+
+cancelTestBtn.addEventListener("click", () => {
+  showHomeScreen();
+});
+
 // ==== SAVE TEST ====
 
-submitBtn.addEventListener("click", () => {
-  const invId = testSelectEl.value;
-  const inv = INVENTORIES[invId];
+saveTestBtn.addEventListener("click", () => {
+  if (!currentInventoryId) return;
+  const inv = INVENTORIES[currentInventoryId];
 
   const answers = [];
   for (const q of inv.questions) {
-    const checked = questionsContainerEl.querySelector(
+    const checked = testQuestionsEl.querySelector(
       `input[name="${q.id}"]:checked`
     );
     if (!checked) {
-      submitStatusEl.textContent = "Please answer all questions.";
-      submitStatusEl.className = "status err";
+      testStatusEl.textContent = "Please answer all questions.";
+      testStatusEl.className = "status err";
       return;
     }
     answers.push(Number(checked.value));
   }
 
-  const rawScore = computeScore(invId, answers);
-  const norm = severityNormalized(invId, rawScore);
+  const rawScore = computeScore(currentInventoryId, answers);
+  const norm = severityNormalized(currentInventoryId, rawScore);
   const now = new Date();
   const entry = {
     id: `entry_${now.getTime()}`,
-    inventoryId: invId,
+    inventoryId: currentInventoryId,
     inventoryName: inv.name,
     timestamp: now.toISOString(),
     rawScore,
@@ -769,8 +748,11 @@ submitBtn.addEventListener("click", () => {
   renderHistory();
   updateChart();
 
-  submitStatusEl.textContent = `${inv.name} saved (raw score ${rawScore}) at ${now.toLocaleString()}`;
-  submitStatusEl.className = "status ok";
+  testStatusEl.textContent = `${inv.name} saved (raw score ${rawScore})`;
+  testStatusEl.className = "status ok";
+
+  // Return to home after brief delay
+  setTimeout(showHomeScreen, 400);
 });
 
 // ==== HISTORY TABLE ====
@@ -909,14 +891,8 @@ exportBtn.addEventListener("click", () => {
 
 // ==== INIT ====
 
-renderQuestions(testSelectEl.value);
 renderHistory();
 updateChart();
-
-testSelectEl.addEventListener("change", () => {
-  renderQuestions(testSelectEl.value);
-  submitStatusEl.textContent = "";
-});
 
 // ==== SERVICE WORKER REGISTRATION ====
 if ("serviceWorker" in navigator) {
