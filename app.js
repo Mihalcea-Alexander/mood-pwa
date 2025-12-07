@@ -620,6 +620,7 @@ function saveEntries(entries) {
 
 function severityNormalized(invId, rawScore) {
   const inv = INVENTORIES[invId];
+  if (!inv) return 0;
   const th = inv.severityThresholds;
   const s = Math.max(th[0], Math.min(rawScore, th[th.length - 1]));
   let idx = th.length - 2;
@@ -673,6 +674,8 @@ const testLaunchButtons = document.querySelectorAll(".test-launch-btn");
 const historyBodyEl = document.getElementById("history-body");
 const filterCheckboxes = document.querySelectorAll(".test-filter");
 const exportBtn = document.getElementById("export-json");
+const importBtn = document.getElementById("import-json");
+const importInput = document.getElementById("import-file");
 const downloadLinkEl = document.getElementById("download-link");
 const ctx = document.getElementById("scores-chart").getContext("2d");
 
@@ -681,6 +684,13 @@ const eventDateInput = document.getElementById("event-date");
 const eventDescInput = document.getElementById("event-description");
 const addEventBtn = document.getElementById("add-event-btn");
 const eventStatusEl = document.getElementById("event-status");
+
+// Manual add UI
+const manualTestSelect = document.getElementById("manual-test-select");
+const manualDateInput = document.getElementById("manual-date");
+const manualScoreInput = document.getElementById("manual-score");
+const manualAddBtn = document.getElementById("manual-add-btn");
+const manualStatusEl = document.getElementById("manual-status");
 
 // AVG toggle
 const avgToggle = document.getElementById("avg-toggle");
@@ -769,7 +779,7 @@ cancelTestBtn.addEventListener("click", () => {
   closeTest();
 });
 
-// ==== SAVE TEST ====
+// ==== SAVE TEST FROM QUESTIONNAIRE ====
 
 saveTestBtn.addEventListener("click", () => {
   if (!currentInventoryId) return;
@@ -853,6 +863,64 @@ addEventBtn.addEventListener("click", () => {
   eventDescInput.value = "";
 });
 
+// ==== MANUAL SCORE ENTRY ====
+
+manualAddBtn.addEventListener("click", () => {
+  const invId = manualTestSelect.value;
+  const inv = INVENTORIES[invId];
+  const dateStr = manualDateInput.value;
+  const rawStr = manualScoreInput.value;
+
+  if (!inv) {
+    manualStatusEl.textContent = "Invalid test selected.";
+    manualStatusEl.className = "status err";
+    return;
+  }
+  if (!dateStr) {
+    manualStatusEl.textContent = "Please pick a date.";
+    manualStatusEl.className = "status err";
+    return;
+  }
+  if (rawStr === "") {
+    manualStatusEl.textContent = "Please enter a raw score.";
+    manualStatusEl.className = "status err";
+    return;
+  }
+
+  let rawScore = Number(rawStr);
+  if (!Number.isFinite(rawScore)) {
+    manualStatusEl.textContent = "Raw score must be a number.";
+    manualStatusEl.className = "status err";
+    return;
+  }
+
+  // Clamp to valid range
+  rawScore = Math.max(0, Math.min(rawScore, inv.maxTotal));
+
+  const date = new Date(dateStr + "T12:00:00");
+  const norm = severityNormalized(invId, rawScore);
+
+  const entry = {
+    kind: "test",
+    id: `manual_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    inventoryId: invId,
+    inventoryName: inv.name,
+    timestamp: date.toISOString(),
+    rawScore,
+    answers: [],
+    severityNormalized: norm,
+  };
+
+  entries.push(entry);
+  saveEntries(entries);
+  renderHistory();
+  updateChart();
+
+  manualStatusEl.textContent = `Added manual ${inv.name} score ${rawScore}.`;
+  manualStatusEl.className = "status ok";
+  manualScoreInput.value = "";
+});
+
 // ==== HISTORY TABLE (expandable, deletable) ====
 
 function buildDetailsContent(entry) {
@@ -875,9 +943,9 @@ function buildDetailsContent(entry) {
       <div><strong>Date/time:</strong> ${dt}</div>
       <div><strong>Raw score:</strong> ${entry.rawScore}</div>
       <div><strong>Normalized severity:</strong> ${norm}</div>
-    `;
+   `;
 
-    if (inv && Array.isArray(entry.answers)) {
+    if (inv && Array.isArray(entry.answers) && entry.answers.length) {
       const list = document.createElement("ul");
       list.className = "answers-list";
       entry.answers.forEach((val, idx) => {
@@ -956,8 +1024,11 @@ function renderHistory() {
     } else {
       tn.textContent =
         e.inventoryName || INVENTORIES[e.inventoryId]?.name || e.inventoryId;
-      sc.textContent = e.rawScore;
-      det.textContent = `answers: [${(e.answers || []).join(", ")}]`;
+      sc.textContent =
+        typeof e.rawScore === "number" ? e.rawScore : e.rawScore ?? "—";
+      det.textContent = e.answers && e.answers.length
+        ? `answers: [${e.answers.join(", ")}]`
+        : "manual / imported entry";
     }
 
     tr.appendChild(tn);
@@ -1216,6 +1287,86 @@ exportBtn.addEventListener("click", () => {
   downloadLinkEl.download = "mood_inventory_data.json";
   downloadLinkEl.click();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
+});
+
+// ==== IMPORT JSON (MERGE) ====
+
+importBtn.addEventListener("click", () => {
+  importInput.click();
+});
+
+importInput.addEventListener("change", (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const text = String(reader.result || "");
+      const parsed = JSON.parse(text);
+
+      // Accept either a raw array or { entries: [...] }
+      const incoming = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed.entries)
+        ? parsed.entries
+        : [];
+
+      if (!incoming.length) {
+        alert("No entries found in JSON.");
+        importInput.value = "";
+        return;
+      }
+
+      const existingIds = new Set(entries.map((x) => x.id));
+      let added = 0;
+
+      incoming.forEach((obj) => {
+        if (!obj || typeof obj !== "object") return;
+
+        if (!obj.id) {
+          obj.id = `import_${Date.now()}_${Math.random()
+            .toString(36)
+            .slice(2, 8)}`;
+        }
+        if (existingIds.has(obj.id)) return;
+
+        // For old-format test entries: ensure severityNormalized exists
+        if (
+          (obj.kind === "test" || !obj.kind) &&
+          obj.inventoryId &&
+          typeof obj.rawScore === "number" &&
+          (obj.severityNormalized === undefined ||
+            obj.severityNormalized === null)
+        ) {
+          obj.severityNormalized = severityNormalized(
+            obj.inventoryId,
+            obj.rawScore
+          );
+        }
+
+        entries.push(obj);
+        existingIds.add(obj.id);
+        added += 1;
+      });
+
+      if (added > 0) {
+        saveEntries(entries);
+        renderHistory();
+        updateChart();
+        alert(`Imported ${added} new entries.`);
+      } else {
+        alert("No new entries imported (all duplicates or invalid).");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Invalid JSON file.");
+    } finally {
+      importInput.value = "";
+    }
+  };
+
+  reader.readAsText(file);
 });
 
 // ==== INIT ====
