@@ -9,10 +9,10 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#111827" />
 
-  <!-- Basic styles -->
+  <!-- Styles -->
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Chart.js from CDN (cached by service worker for offline use) -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -22,7 +22,7 @@
   </header>
 
   <main>
-    <!-- Test launcher -->
+    <!-- Choose test -->
     <section class="card">
       <h2>Choose a Test</h2>
       <div class="test-buttons">
@@ -32,10 +32,10 @@
         <button class="primary-btn test-launch-btn" data-inv="burns">BURNS</button>
         <button class="primary-btn test-launch-btn" data-inv="shaps">SHAPS</button>
       </div>
-      <p class="hint">Tap a test to open it, fill out all questions, then save.</p>
+      <p class="hint">Tap a test, answer all questions, then save.</p>
     </section>
 
-    <!-- Question card (appears after selecting a test) -->
+    <!-- Test card (sits between choose + graph) -->
     <section class="card hidden" id="question-card">
       <h2 id="test-title">Test</h2>
       <div id="test-questions"></div>
@@ -46,32 +46,32 @@
       <p id="test-status" class="status"></p>
     </section>
 
-    <!-- Scores + graph -->
+    <!-- Graph -->
     <section class="card">
       <h2>Scores Over Time</h2>
 
       <div class="test-filters">
-        <label><input type="checkbox" class="test-filter" value="phq9" checked /> PHQ-9</label>
-        <label><input type="checkbox" class="test-filter" value="madrs" checked /> MADRS</label>
-        <label><input type="checkbox" class="test-filter" value="bdi2" checked /> BDI-II</label>
-        <label><input type="checkbox" class="test-filter" value="burns" checked /> BURNS</label>
-        <label><input type="checkbox" class="test-filter" value="shaps" checked /> SHAPS</label>
-        <label><input type="checkbox" id="avg-toggle" /> AVG</label>
+        <label><input type="checkbox" class="test-filter" value="phq9" checked> PHQ-9</label>
+        <label><input type="checkbox" class="test-filter" value="madrs" checked> MADRS</label>
+        <label><input type="checkbox" class="test-filter" value="bdi2" checked> BDI-II</label>
+        <label><input type="checkbox" class="test-filter" value="burns" checked> BURNS</label>
+        <label><input type="checkbox" class="test-filter" value="shaps" checked> SHAPS</label>
+        <label><input type="checkbox" id="avg-toggle"> AVG</label>
       </div>
 
       <div class="forecast-controls">
         <label class="forecast-toggle-label">
-          <input type="checkbox" id="forecast-toggle" />
-          Forecast (when AVG is on)
+          <input type="checkbox" id="forecast-toggle">
+          Forecast (uses AVG)
         </label>
         <div class="forecast-inputs">
           <label>
-            Lookback (days):
-            <input type="number" id="forecast-lookback" value="30" min="2" max="3650" />
+            Lookback days
+            <input type="number" id="forecast-lookback" value="30" min="2" max="3650">
           </label>
           <label>
-            Horizon (days):
-            <input type="number" id="forecast-horizon" value="14" min="1" max="365" />
+            Horizon days
+            <input type="number" id="forecast-horizon" value="14" min="1" max="365">
           </label>
         </div>
       </div>
@@ -80,33 +80,33 @@
         <canvas id="scores-chart"></canvas>
       </div>
       <p class="hint">
-        Y-axis is severity-normalized: a “moderate” score on any scale lines up with “moderate” on others.
-        Hover points for raw scores. Forecast (if enabled) uses recent AVG trend with ±1&nbsp;SD band.
+        Y-axis is severity-normalized (0–1). AVG/forecast use checked scales only.
+        Forecast shows dotted line with ±1 SD yellow band.
       </p>
     </section>
 
-    <!-- Events + manual add + import/export -->
+    <!-- Events, manual, import/export -->
     <section class="card">
       <h2>Key Events & Manual Entries</h2>
 
-      <h3>Key Events</h3>
+      <h3>Key events</h3>
       <div class="event-form">
         <label>
-          Date:
-          <input type="date" id="event-date" />
+          Date
+          <input type="date" id="event-date">
         </label>
-        <label class="event-desc-label">
-          Description:
-          <input type="text" id="event-description" placeholder="Started medication, changed dose, etc." />
+        <label class="grow">
+          Description
+          <input type="text" id="event-description" placeholder="Started medication, dose change, etc.">
         </label>
-        <button id="add-event-btn" class="secondary-btn">Add Event</button>
+        <button id="add-event-btn" class="secondary-btn">Add event</button>
       </div>
       <p id="event-status" class="status"></p>
 
-      <h3>Manual Score Entry</h3>
+      <h3>Manual score</h3>
       <div class="manual-form">
         <label>
-          Test:
+          Test
           <select id="manual-test-select">
             <option value="phq9">PHQ-9</option>
             <option value="madrs">MADRS</option>
@@ -116,27 +116,27 @@
           </select>
         </label>
         <label>
-          Date:
-          <input type="date" id="manual-date" />
+          Date
+          <input type="date" id="manual-date">
         </label>
         <label>
-          Raw score:
-          <input type="number" id="manual-score" />
+          Raw score
+          <input type="number" id="manual-score">
         </label>
-        <button id="manual-add-btn" class="secondary-btn">Add Manual Score</button>
+        <button id="manual-add-btn" class="secondary-btn">Add score</button>
       </div>
       <p id="manual-status" class="status"></p>
 
-      <h3>Export / Import</h3>
+      <h3>Export / import</h3>
       <div class="io-row">
-        <button id="export-json" class="secondary-btn">Export data (JSON)</button>
-        <button id="import-json" class="secondary-btn">Import data (JSON)</button>
-        <input id="import-file" type="file" accept="application/json" style="display:none" />
+        <button id="export-json" class="secondary-btn">Export JSON</button>
+        <button id="import-json" class="secondary-btn">Import JSON</button>
+        <input id="import-file" type="file" accept="application/json" style="display:none">
         <a id="download-link" style="display:none"></a>
       </div>
     </section>
 
-    <!-- History table -->
+    <!-- History -->
     <section class="card">
       <h2>History</h2>
       <table id="history-table">
@@ -144,18 +144,18 @@
           <tr>
             <th>Date/Time</th>
             <th>Test / Event</th>
-            <th>Raw Score</th>
+            <th>Raw</th>
             <th>Details</th>
           </tr>
         </thead>
         <tbody id="history-body"></tbody>
       </table>
-      <p class="hint">Tap a row to expand full details and optionally delete entries.</p>
+      <p class="hint">Tap a row to expand details and delete.</p>
     </section>
   </main>
 
   <footer>
-    <span class="footer-note">Data is stored only on this device (local storage).</span>
+    <span class="footer-text">Data is stored only on this device (localStorage).</span>
   </footer>
 
   <script src="app.js"></script>
