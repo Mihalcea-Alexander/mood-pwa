@@ -1265,6 +1265,34 @@ function updateChart() {
   if (eventDataset) datasets.push(eventDataset);
 
   chart.data.datasets = datasets;
+
+  // === NEW: force x-axis to span all points (tests + events + avg) ===
+  let minX = null;
+  let maxX = null;
+
+  datasets.forEach((ds) => {
+    (ds.data || []).forEach((p) => {
+      if (!p || !p.x) return;
+      const t =
+        p.x instanceof Date
+          ? p.x.getTime()
+          : new Date(p.x).getTime();
+      if (!Number.isFinite(t)) return;
+      if (minX === null || t < minX) minX = t;
+      if (maxX === null || t > maxX) maxX = t;
+    });
+  });
+
+  if (minX !== null && maxX !== null) {
+    const pad = 0.5 * 24 * 60 * 60 * 1000; // half-day padding on each side
+    chart.options.scales.x.min = minX - pad;
+    chart.options.scales.x.max = maxX + pad;
+  } else {
+    chart.options.scales.x.min = undefined;
+    chart.options.scales.x.max = undefined;
+  }
+  // === end new block ===
+
   chart.update();
 }
 
