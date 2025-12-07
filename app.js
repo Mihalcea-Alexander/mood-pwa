@@ -13,7 +13,7 @@ const INVENTORIES = {
         text: "Little interest or pleasure in doing things",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Some of the time", value: 1 },
+          { label: "Sometimes", value: 1 },
           { label: "More than half the time", value: 2 },
           { label: "Nearly all the time", value: 3 },
         ],
@@ -23,7 +23,7 @@ const INVENTORIES = {
         text: "Feeling down, depressed, or hopeless",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Some of the time", value: 1 },
+          { label: "Sometimes", value: 1 },
           { label: "More than half the time", value: 2 },
           { label: "Nearly all the time", value: 3 },
         ],
@@ -33,7 +33,7 @@ const INVENTORIES = {
         text: "Trouble falling or staying asleep, or sleeping too much",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Some of the time", value: 1 },
+          { label: "Sometimes", value: 1 },
           { label: "More than half the time", value: 2 },
           { label: "Nearly all the time", value: 3 },
         ],
@@ -43,7 +43,7 @@ const INVENTORIES = {
         text: "Feeling tired or having little energy",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Some of the time", value: 1 },
+          { label: "Sometimes", value: 1 },
           { label: "More than half the time", value: 2 },
           { label: "Nearly all the time", value: 3 },
         ],
@@ -53,7 +53,7 @@ const INVENTORIES = {
         text: "Poor appetite or overeating",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Some of the time", value: 1 },
+          { label: "Sometimes", value: 1 },
           { label: "More than half the time", value: 2 },
           { label: "Nearly all the time", value: 3 },
         ],
@@ -64,7 +64,7 @@ const INVENTORIES = {
           "Feeling bad about yourself or like you are a failure or have let yourself or your family down",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Some of the time", value: 1 },
+          { label: "Sometimes", value: 1 },
           { label: "More than half the time", value: 2 },
           { label: "Nearly all the time", value: 3 },
         ],
@@ -74,7 +74,7 @@ const INVENTORIES = {
         text: "Trouble concentrating (reading, TV, etc.)",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Some of the time", value: 1 },
+          { label: "Sometimes", value: 1 },
           { label: "More than half the time", value: 2 },
           { label: "Nearly all the time", value: 3 },
         ],
@@ -85,7 +85,7 @@ const INVENTORIES = {
           "Moving or speaking noticeably slower than usual, or feeling very restless and fidgety",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Some of the time", value: 1 },
+          { label: "Sometimes", value: 1 },
           { label: "More than half the time", value: 2 },
           { label: "Nearly all the time", value: 3 },
         ],
@@ -95,7 +95,7 @@ const INVENTORIES = {
         text: "Thoughts you would be better off dead or of self-harm",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Some of the time", value: 1 },
+          { label: "Sometimes", value: 1 },
           { label: "More than half the time", value: 2 },
           { label: "Nearly all the time", value: 3 },
         ],
@@ -465,7 +465,7 @@ const INVENTORIES = {
 
   burns: {
     id: "burns",
-    name: "Burns",
+    name: "Burns Depression Checklist",
     maxTotal: 100,
     severityThresholds: [0, 5, 10, 25, 50, 75, 100],
     type: "simple_sum",
@@ -509,7 +509,7 @@ const INVENTORIES = {
 
   shaps: {
     id: "shaps",
-    name: "SHAPS",
+    name: "Snaith-Hamilton Pleasure Scale",
     maxTotal: 14,
     severityThresholds: [0, 2, 5, 9, 14],
     type: "shaps_dichotomous",
@@ -627,6 +627,12 @@ const exportBtn = document.getElementById("export-json");
 const downloadLinkEl = document.getElementById("download-link");
 const ctx = document.getElementById("scores-chart").getContext("2d");
 
+// Event UI
+const eventDateInput = document.getElementById("event-date");
+const eventDescInput = document.getElementById("event-description");
+const addEventBtn = document.getElementById("add-event-btn");
+const eventStatusEl = document.getElementById("event-status");
+
 let entries = loadEntries();
 let currentInventoryId = null;
 
@@ -686,6 +692,7 @@ function openTest(invId) {
   currentInventoryId = invId;
   testTitleEl.textContent = inv.name;
   testStatusEl.textContent = "";
+  testStatusEl.className = "status";
   renderQuestions(invId);
   questionCardEl.classList.remove("hidden");
   questionCardEl.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -695,6 +702,7 @@ function closeTest() {
   currentInventoryId = null;
   testQuestionsEl.innerHTML = "";
   testStatusEl.textContent = "";
+  testStatusEl.className = "status";
   questionCardEl.classList.add("hidden");
 }
 
@@ -732,6 +740,7 @@ saveTestBtn.addEventListener("click", () => {
   const norm = severityNormalized(currentInventoryId, rawScore);
   const now = new Date();
   const entry = {
+    kind: "test",
     id: `entry_${now.getTime()}`,
     inventoryId: currentInventoryId,
     inventoryName: inv.name,
@@ -754,6 +763,44 @@ saveTestBtn.addEventListener("click", () => {
   }, 400);
 });
 
+// ==== ADD KEY EVENT ====
+
+addEventBtn.addEventListener("click", () => {
+  const dateStr = eventDateInput.value;
+  const desc = eventDescInput.value.trim();
+
+  if (!dateStr) {
+    eventStatusEl.textContent = "Please pick a date.";
+    eventStatusEl.className = "status err";
+    return;
+  }
+  if (!desc) {
+    eventStatusEl.textContent = "Please enter a description.";
+    eventStatusEl.className = "status err";
+    return;
+  }
+
+  // Use local noon for that date
+  const date = new Date(dateStr + "T12:00:00");
+  const now = new Date();
+
+  const ev = {
+    kind: "event",
+    id: `event_${now.getTime()}`,
+    timestamp: date.toISOString(),
+    description: desc,
+  };
+
+  entries.push(ev);
+  saveEntries(entries);
+  renderHistory();
+  updateChart();
+
+  eventStatusEl.textContent = "Event added.";
+  eventStatusEl.className = "status ok";
+  eventDescInput.value = "";
+});
+
 // ==== HISTORY TABLE ====
 
 function renderHistory() {
@@ -770,18 +817,23 @@ function renderHistory() {
     tr.appendChild(dt);
 
     const tn = document.createElement("td");
-    tn.textContent = e.inventoryName;
-    tr.appendChild(tn);
-
     const sc = document.createElement("td");
-    sc.textContent = e.rawScore;
-    tr.appendChild(sc);
-
     const det = document.createElement("td");
     det.className = "details-cell";
-    det.textContent = `answers: [${e.answers.join(", ")}]`;
-    tr.appendChild(det);
 
+    if (e.kind === "event") {
+      tn.textContent = "EVENT";
+      sc.textContent = "—";
+      det.textContent = e.description || "";
+    } else {
+      tn.textContent = e.inventoryName;
+      sc.textContent = e.rawScore;
+      det.textContent = `answers: [${(e.answers || []).join(", ")}]`;
+    }
+
+    tr.appendChild(tn);
+    tr.appendChild(sc);
+    tr.appendChild(det);
     historyBodyEl.appendChild(tr);
   }
 }
@@ -794,6 +846,42 @@ const COLOR_MAP = {
   bdi2: "#3b82f6",
   burns: "#e11d48",
   shaps: "#a855f7",
+};
+
+// Legend label mapping (BURNS / SHAPS acronyms)
+const LABEL_MAP = {
+  phq9: "PHQ-9",
+  madrs: "MADRS",
+  bdi2: "BDI-II",
+  burns: "BURNS",
+  shaps: "SHAPS",
+};
+
+// Plugin to draw event lines
+const eventLinesPlugin = {
+  id: "eventLines",
+  afterDraw(chart, args, opts) {
+    const events = chart.$events || [];
+    if (!events.length) return;
+    const { ctx, chartArea, scales } = chart;
+    const xScale = scales.x;
+
+    ctx.save();
+    ctx.strokeStyle = "#6b7280";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+
+    events.forEach((ev) => {
+      const x = xScale.getPixelForValue(new Date(ev.timestamp));
+      if (x < chartArea.left || x > chartArea.right) return;
+      ctx.beginPath();
+      ctx.moveTo(x, chartArea.top);
+      ctx.lineTo(x, chartArea.bottom);
+      ctx.stroke();
+    });
+
+    ctx.restore();
+  },
 };
 
 const chart = new Chart(ctx, {
@@ -823,14 +911,28 @@ const chart = new Chart(ctx, {
     },
     plugins: {
       legend: {
-        labels: { color: "#e5e7eb" },
+        labels: {
+          color: "#e5e7eb",
+          // hide the "Events" dataset from the legend
+          filter: (item, data) => {
+            const ds = data.datasets[item.datasetIndex];
+            return !ds.isEvent;
+          },
+        },
       },
       tooltip: {
         callbacks: {
           label: (ctx) => {
             const d = ctx.raw;
-            const inv = INVENTORIES[d.inventoryId];
-            return `${inv.name}: raw ${d.rawScore}, norm ${d.y.toFixed(2)}`;
+            if (d && d.eventDescription) {
+              const dt = new Date(d.x);
+              return `Event: ${d.eventDescription} (${dt.toLocaleDateString()})`;
+            }
+            if (!d || !d.inventoryId) return "";
+            const invId = d.inventoryId;
+            const label =
+              LABEL_MAP[invId] || INVENTORIES[invId]?.name || "Score";
+            return `${label}: raw ${d.rawScore}, norm ${d.y.toFixed(2)}`;
           },
         },
       },
@@ -840,6 +942,7 @@ const chart = new Chart(ctx, {
       point: { radius: 3 },
     },
   },
+  plugins: [eventLinesPlugin],
 });
 
 function updateChart() {
@@ -847,10 +950,13 @@ function updateChart() {
     .filter((c) => c.checked)
     .map((c) => c.value);
 
-  const datasets = activeIds.map((invId) => {
+  // Test score datasets
+  const scoreDatasets = activeIds.map((invId) => {
     const inv = INVENTORIES[invId];
     const data = entries
-      .filter((e) => e.inventoryId === invId)
+      .filter(
+        (e) => e.kind !== "event" && e.inventoryId === invId
+      )
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
       .map((e) => ({
         x: new Date(e.timestamp),
@@ -860,14 +966,39 @@ function updateChart() {
       }));
 
     return {
-      label: inv.name,
+      label: LABEL_MAP[invId] || inv.name,
       data,
       borderColor: COLOR_MAP[invId] || "#f97316",
       backgroundColor: COLOR_MAP[invId] || "#f97316",
     };
   });
 
-  chart.data.datasets = datasets;
+  // Event markers dataset (for tooltip hit area)
+  const events = entries.filter((e) => e.kind === "event");
+  let eventDataset = null;
+  if (events.length) {
+    const eventPoints = events.map((ev) => ({
+      x: new Date(ev.timestamp),
+      y: 0, // plotted at bottom; actual vertical line is drawn by plugin
+      eventDescription: ev.description,
+    }));
+    eventDataset = {
+      label: "Events",
+      isEvent: true,
+      data: eventPoints,
+      borderWidth: 0,
+      pointRadius: 0,
+      pointHitRadius: 10,
+      showLine: false,
+    };
+  }
+
+  chart.$events = events;
+
+  chart.data.datasets = eventDataset
+    ? [...scoreDatasets, eventDataset]
+    : scoreDatasets;
+
   chart.update();
 }
 
