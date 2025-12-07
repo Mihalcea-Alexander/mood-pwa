@@ -692,13 +692,16 @@ const manualScoreInput = document.getElementById("manual-score");
 const manualAddBtn = document.getElementById("manual-add-btn");
 const manualStatusEl = document.getElementById("manual-status");
 
-// AVG toggle
+// AVG + Forecast
 const avgToggle = document.getElementById("avg-toggle");
+const forecastToggle = document.getElementById("forecast-toggle");
+const forecastLookbackInput = document.getElementById("forecast-lookback");
+const forecastHorizonInput = document.getElementById("forecast-horizon");
 
 let entries = loadEntries();
 let currentInventoryId = null;
 
-// ==== RENDER QUESTIONS ====
+// ==== QUESTION RENDERING ====
 
 function renderQuestions(invId) {
   const inv = INVENTORIES[invId];
@@ -826,7 +829,7 @@ saveTestBtn.addEventListener("click", () => {
   }, 400);
 });
 
-// ==== ADD KEY EVENT ====
+// ==== KEY EVENTS ====
 
 addEventBtn.addEventListener("click", () => {
   const dateStr = eventDateInput.value;
@@ -894,7 +897,6 @@ manualAddBtn.addEventListener("click", () => {
     return;
   }
 
-  // Clamp to valid range
   rawScore = Math.max(0, Math.min(rawScore, inv.maxTotal));
 
   const date = new Date(dateStr + "T12:00:00");
@@ -1075,7 +1077,7 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-// Plugin to draw event vertical lines
+// Plugin to draw vertical lines for events
 const eventLinesPlugin = {
   id: "eventLines",
   afterDraw(chart) {
@@ -1133,7 +1135,7 @@ const chart = new Chart(ctx, {
           color: "#e5e7eb",
           filter: (item, data) => {
             const ds = data.datasets[item.datasetIndex];
-            return !ds.isEvent; // hide Events dataset
+            return !ds.isEvent && !ds.isForecastBand;
           },
         },
       },
@@ -1150,6 +1152,11 @@ const chart = new Chart(ctx, {
             if (d && d.isAvg) {
               const dt = new Date(d.x);
               return `AVG: ${d.y.toFixed(2)} (${dt.toLocaleDateString()})`;
+            }
+
+            if (d && d.isForecast) {
+              const dt = new Date(d.x);
+              return `Forecast AVG: ${d.y.toFixed(2)} (${dt.toLocaleDateString()})`;
             }
 
             if (!d || !d.inventoryId) return "";
@@ -1200,7 +1207,7 @@ function updateChart() {
     };
   });
 
-  // Events dataset (for tooltip hit area)
+  // Events
   const events = entries.filter((e) => e.kind === "event");
   let eventDataset = null;
   if (events.length) {
@@ -1220,10 +1227,11 @@ function updateChart() {
     };
   }
 
-  // AVG dataset across all active inventories (by day)
+  // AVG dataset (by day)
   let avgDataset = null;
+  let avgData = null;
   if (avgActive && activeIds.length > 0) {
-    const byDay = new Map(); // key: YYYY-MM-DD -> {sum, count}
+    const byDay = new Map(); // YYYY-MM-DD -> {sum, count}
     entries
       .filter(
         (e) => e.kind !== "event" && activeIds.includes(e.inventoryId)
@@ -1238,7 +1246,7 @@ function updateChart() {
         obj.count += 1;
       });
 
-    const avgData = Array.from(byDay.entries())
+    avgData = Array.from(byDay.entries())
       .map(([key, { sum, count }]) => ({
         x: new Date(key + "T12:00:00"),
         y: sum / count,
@@ -1258,15 +1266,161 @@ function updateChart() {
     }
   }
 
+  // Forecast from AVG using linear regression with prediction intervals
+  const dayMs = 24 * 60 * 60 * 1000;
+  let forecastLineDataset = null;
+  let forecastBandLowerDataset = null;
+  let forecastBandUpperDataset = null;
+
+  if (
+    avgActive &&
+    avgData &&
+    avgData.length >= 2 &&
+    forecastToggle &&
+    forecastToggle.checked
+  ) {
+    let lookback =
+      parseInt(forecastLookbackInput.value, 10) || 30;
+    let horizon =
+      parseInt(forecastHorizonInput.value, 10) || 14;
+
+    lookback = Math.max(2, Math.min(3650, lookback));
+    horizon = Math.max(1, Math.min(365, horizon));
+
+    const latestTime = avgData[avgData.length - 1].x.getTime();
+    const cutoff = latestTime - lookback * dayMs;
+    const train = avgData.filter(
+      (p) => p.x.getTime() >= cutoff
+    );
+
+    if (train.length >= 2) {
+      const n = train.length;
+      const t0 = train[0].x.getTime();
+
+      const xs = train.map(
+        (p) => (p.x.getTime() - t0) / dayMs
+      );
+      const ys = train.map((p) => p.y);
+
+      const meanX = xs.reduce((a, b) => a + b, 0) / n;
+      const meanY = ys.reduce((a, b) => a + b, 0) / n;
+
+      let Sxx = 0;
+      let Sxy = 0;
+      for (let i = 0; i < n; i++) {
+        const dx = xs[i] - meanX;
+        Sxx += dx * dx;
+        Sxy += dx * (ys[i] - meanY);
+      }
+
+      let slope = 0;
+      if (Sxx > 0) slope = Sxy / Sxx;
+      const intercept = meanY - slope * meanX;
+
+      // Residual variance
+      let sigma2 = 0;
+      if (n > 2 && Sxx > 0) {
+        let rss = 0;
+        for (let i = 0; i < n; i++) {
+          const yhat = intercept + slope * xs[i];
+          const res = ys[i] - yhat;
+          rss += res * res;
+        }
+        sigma2 = rss / (n - 2);
+      } else {
+        // fallback to variance around mean
+        let s2 = 0;
+        for (let i = 0; i < n; i++) {
+          const dy = ys[i] - meanY;
+          s2 += dy * dy;
+        }
+        sigma2 = n > 1 ? s2 / (n - 1) : 0.01;
+      }
+      if (!Number.isFinite(sigma2) || sigma2 <= 0) {
+        sigma2 = 0.01;
+      }
+
+      const forecastPoints = [];
+      const bandLower = [];
+      const bandUpper = [];
+      const lastTime = latestTime;
+
+      for (let j = 0; j <= horizon; j++) {
+        const t = lastTime + j * dayMs;
+        const xStar = (t - t0) / dayMs;
+        const yHat = intercept + slope * xStar;
+
+        const dx = xStar - meanX;
+        const baseVar =
+          sigma2 *
+          (1 +
+            1 / n +
+            (Sxx > 0 ? (dx * dx) / Sxx : 0));
+        const sd = Math.sqrt(baseVar);
+
+        let base = Math.min(1, Math.max(0, yHat));
+        let upper = Math.min(1, Math.max(0, yHat + sd));
+        let lower = Math.min(1, Math.max(0, yHat - sd));
+
+        const dateObj = new Date(t);
+
+        forecastPoints.push({
+          x: dateObj,
+          y: base,
+          isForecast: true,
+        });
+        bandLower.push({ x: dateObj, y: lower });
+        bandUpper.push({ x: dateObj, y: upper });
+      }
+
+      forecastLineDataset = {
+        label: "Forecast AVG",
+        data: forecastPoints,
+        borderColor: "#facc15",
+        backgroundColor: "#facc15",
+        borderDash: [6, 4],
+        borderWidth: 2,
+        pointRadius: 0,
+      };
+
+      // band between lower and upper
+      forecastBandLowerDataset = {
+        label: "Forecast band lower",
+        data: bandLower,
+        borderColor: "rgba(250, 204, 21, 0.0)",
+        backgroundColor: "rgba(250, 204, 21, 0.0)",
+        borderWidth: 0,
+        pointRadius: 0,
+        isForecastBand: true,
+        fill: false,
+      };
+
+      forecastBandUpperDataset = {
+        label: "Forecast band upper",
+        data: bandUpper,
+        borderColor: "rgba(250, 204, 21, 0.0)",
+        backgroundColor: "rgba(250, 204, 21, 0.2)",
+        borderWidth: 0,
+        pointRadius: 0,
+        isForecastBand: true,
+        fill: "-1", // fill to previous dataset (lower)
+      };
+    }
+  }
+
   chart.$events = events;
 
   const datasets = [...scoreDatasets];
   if (avgDataset) datasets.push(avgDataset);
+  if (forecastBandLowerDataset && forecastBandUpperDataset) {
+    datasets.push(forecastBandLowerDataset, forecastBandUpperDataset);
+  }
+  if (forecastLineDataset) datasets.push(forecastLineDataset);
   if (eventDataset) datasets.push(eventDataset);
 
   chart.data.datasets = datasets;
 
-  // === NEW: force x-axis to span all points (tests + events + avg) ===
+  // Auto x-range to cover all datasets (scores + AVG + forecast + events)
   let minX = null;
   let maxX = null;
 
@@ -1284,14 +1438,13 @@ function updateChart() {
   });
 
   if (minX !== null && maxX !== null) {
-    const pad = 0.5 * 24 * 60 * 60 * 1000; // half-day padding on each side
+    const pad = 0.5 * dayMs;
     chart.options.scales.x.min = minX - pad;
     chart.options.scales.x.max = maxX + pad;
   } else {
     chart.options.scales.x.min = undefined;
     chart.options.scales.x.max = undefined;
   }
-  // === end new block ===
 
   chart.update();
 }
@@ -1302,6 +1455,21 @@ filterCheckboxes.forEach((cb) =>
 
 if (avgToggle) {
   avgToggle.addEventListener("change", updateChart);
+}
+if (forecastToggle) {
+  forecastToggle.addEventListener("change", updateChart);
+}
+if (forecastLookbackInput) {
+  forecastLookbackInput.addEventListener("change", updateChart);
+  forecastLookbackInput.addEventListener("input", () => {
+    if (forecastToggle.checked) updateChart();
+  });
+}
+if (forecastHorizonInput) {
+  forecastHorizonInput.addEventListener("change", updateChart);
+  forecastHorizonInput.addEventListener("input", () => {
+    if (forecastToggle.checked) updateChart();
+  });
 }
 
 // ==== EXPORT JSON ====
@@ -1333,7 +1501,6 @@ importInput.addEventListener("change", (e) => {
       const text = String(reader.result || "");
       const parsed = JSON.parse(text);
 
-      // Accept either a raw array or { entries: [...] }
       const incoming = Array.isArray(parsed)
         ? parsed
         : Array.isArray(parsed.entries)
@@ -1359,7 +1526,6 @@ importInput.addEventListener("change", (e) => {
         }
         if (existingIds.has(obj.id)) return;
 
-        // For old-format test entries: ensure severityNormalized exists
         if (
           (obj.kind === "test" || !obj.kind) &&
           obj.inventoryId &&
