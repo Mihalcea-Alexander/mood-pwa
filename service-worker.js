@@ -1,11 +1,11 @@
-const CACHE_NAME = "mood-pwa-v4";
+const CACHE_NAME = "mood-pwa-v5";
 const ASSETS = [
   "./",
   "./style.css",
   "./app.js",
   "./manifest.webmanifest",
   "https://cdn.jsdelivr.net/npm/chart.js",
-  "https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns",
+  "https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"
 ];
 
 self.addEventListener("install", (event) => {
