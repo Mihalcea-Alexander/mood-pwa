@@ -9,25 +9,23 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#111827" />
 
-  <!-- Styles -->
+  <!-- Basic styles -->
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Chart.js and time adapter -->
+  <!-- Chart.js from CDN (cached by service worker for offline use) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
 <body>
   <header>
     <h1>Mood Inventory Logger</h1>
-    <p>PHQ-9 · MADRS · BDI-II · BURNS · SHAPS</p>
+    <p>PHQ-9 · MADRS · BDI-II · Burns · SHAPS</p>
   </header>
 
   <main>
-    <!-- Selector / launcher -->
+    <!-- Test launcher buttons -->
     <section class="card">
       <h2>Choose a Test</h2>
-      <p>Select an inventory to fill out a new entry.</p>
-      <div class="test-grid">
+      <div class="test-launch-row">
         <button class="primary-btn test-launch-btn" data-inv="phq9">PHQ-9</button>
         <button class="primary-btn test-launch-btn" data-inv="madrs">MADRS</button>
         <button class="primary-btn test-launch-btn" data-inv="bdi2">BDI-II</button>
@@ -36,103 +34,123 @@
       </div>
     </section>
 
-    <!-- Question window: directly under selector -->
+    <!-- Question-taking card (appears between chooser and graph) -->
     <section class="card hidden" id="question-card">
       <h2 id="test-title">Test</h2>
-      <p id="test-subtitle" class="hint">Answer all questions below.</p>
-
       <div id="test-questions"></div>
-
       <div class="test-actions">
-        <button id="save-test-btn" class="primary-btn">Save</button>
+        <button id="save-test-btn" class="primary-btn">Save Test</button>
         <button id="cancel-test-btn" class="secondary-btn">Cancel</button>
       </div>
-
       <p id="test-status" class="status"></p>
     </section>
 
-    <!-- Graph -->
+    <!-- Scores + graph -->
     <section class="card">
       <h2>Scores Over Time</h2>
+
       <div class="test-filters">
         <label><input type="checkbox" class="test-filter" value="phq9" checked /> PHQ-9</label>
         <label><input type="checkbox" class="test-filter" value="madrs" checked /> MADRS</label>
         <label><input type="checkbox" class="test-filter" value="bdi2" checked /> BDI-II</label>
         <label><input type="checkbox" class="test-filter" value="burns" checked /> BURNS</label>
         <label><input type="checkbox" class="test-filter" value="shaps" checked /> SHAPS</label>
-        <label><input type="checkbox" id="avg-toggle" /> AVG</label>
       </div>
+
+      <div class="avg-controls">
+        <label class="inline-label">
+          <input type="checkbox" id="avg-toggle" />
+          Show AVG
+        </label>
+
+        <label class="inline-label">
+          <input type="checkbox" id="forecast-toggle" />
+          Forecast
+        </label>
+
+        <div class="forecast-fields">
+          <label>
+            Use last
+            <input type="number" id="forecast-past-days" min="3" max="365" value="30" />
+            days
+          </label>
+          <label>
+            Forecast
+            <input type="number" id="forecast-future-days" min="1" max="365" value="14" />
+            days ahead
+          </label>
+        </div>
+      </div>
+
       <div class="chart-wrap">
         <canvas id="scores-chart"></canvas>
       </div>
       <p class="hint">
-        Y-axis is severity-normalized: a “moderate” score on any scale lines up with “moderate” on others. Hover points for raw scores.
+        Y-axis is severity-normalized: a “moderate” score on any scale lines up with “moderate” on others.
+        Hover points for raw scores. Events show as vertical lines; hover to see labels.
       </p>
-
-      <!-- Key time points -->
-      <div class="event-form">
-        <h3>Add key time point</h3>
-        <div class="event-row">
-          <label>
-            Date
-            <input type="date" id="event-date" />
-          </label>
-          <label class="event-desc-label">
-            Description
-            <input
-              type="text"
-              id="event-description"
-              placeholder="e.g. Started medication"
-            />
-          </label>
-          <button id="add-event-btn" class="secondary-btn">Add</button>
-        </div>
-        <p id="event-status" class="status"></p>
-      </div>
     </section>
 
-    <!-- History -->
+    <!-- Key events -->
+    <section class="card">
+      <h2>Key Events</h2>
+      <div class="event-row">
+        <label>
+          Date
+          <input type="date" id="event-date" />
+        </label>
+        <label class="event-desc-label">
+          Description
+          <input type="text" id="event-description" placeholder="Started medication, changed dose, etc." />
+        </label>
+        <button id="add-event-btn" class="secondary-btn">Add Event</button>
+      </div>
+      <p id="event-status" class="status"></p>
+    </section>
+
+    <!-- Manual scores + history -->
     <section class="card">
       <h2>History</h2>
 
-      <!-- Manual score entry -->
-      <div class="manual-add">
-        <h3>Manual score entry</h3>
-        <div class="manual-row">
-          <label>
-            Test
-            <select id="manual-test-select">
-              <option value="phq9">PHQ-9</option>
-              <option value="madrs">MADRS</option>
-              <option value="bdi2">BDI-II</option>
-              <option value="burns">BURNS</option>
-              <option value="shaps">SHAPS</option>
-            </select>
-          </label>
-          <label>
-            Date
-            <input type="date" id="manual-date" />
-          </label>
-          <label>
-            Raw score
-            <input type="number" id="manual-score" min="0" step="1" />
-          </label>
-          <button id="manual-add-btn" class="secondary-btn">Add</button>
-        </div>
-        <p id="manual-status" class="status"></p>
+      <h3>Manual score entry</h3>
+      <div class="manual-row">
+        <label>
+          Test
+          <select id="manual-test-select">
+            <option value="phq9">PHQ-9</option>
+            <option value="madrs">MADRS</option>
+            <option value="bdi2">BDI-II</option>
+            <option value="burns">BURNS</option>
+            <option value="shaps">SHAPS</option>
+          </select>
+        </label>
+        <label>
+          Date
+          <input type="date" id="manual-date" />
+        </label>
+        <label>
+          Raw score
+          <input type="number" id="manual-score" min="0" />
+        </label>
+        <button id="manual-add-btn" class="secondary-btn">Add</button>
       </div>
+      <p id="manual-status" class="status"></p>
 
+      <h3>All entries</h3>
       <table id="history-table">
         <thead>
           <tr>
             <th>Date/Time</th>
             <th>Test / Event</th>
             <th>Raw Score</th>
-            <th>Details</th>
+            <th>Summary</th>
           </tr>
         </thead>
         <tbody id="history-body"></tbody>
       </table>
+      <p class="hint">
+        Tap/click a row to expand details and delete individual entries.
+      </p>
     </section>
   </main>
 
