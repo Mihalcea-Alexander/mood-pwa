@@ -595,9 +595,9 @@ function scoreShaps(questionDefs, numericAnswers) {
     const v = numericAnswers[idx];
     if (!Number.isFinite(v)) return;
     if (q.reverse) {
-      if (v >= 2) total += 1; // agree / strongly agree
+      if (v >= 2) total += 1;
     } else {
-      if (v <= 1) total += 1; // disagree / strongly disagree
+      if (v <= 1) total += 1;
     }
   });
   return total;
@@ -613,8 +613,7 @@ function computeScore(invId, numericAnswers) {
 
 // ==== DOM ELEMENTS ====
 
-const homeScreenEl = document.getElementById("home-screen");
-const testScreenEl = document.getElementById("test-screen");
+const questionCardEl = document.getElementById("question-card");
 const testTitleEl = document.getElementById("test-title");
 const testQuestionsEl = document.getElementById("test-questions");
 const testStatusEl = document.getElementById("test-status");
@@ -679,15 +678,7 @@ function renderQuestions(invId) {
   });
 }
 
-// ==== SCREEN SWITCHING ====
-
-function showHomeScreen() {
-  testScreenEl.classList.add("hidden");
-  homeScreenEl.classList.remove("hidden");
-  currentInventoryId = null;
-  testQuestionsEl.innerHTML = "";
-  testStatusEl.textContent = "";
-}
+// ==== SHOW / HIDE QUESTION CARD ====
 
 function openTest(invId) {
   const inv = INVENTORIES[invId];
@@ -696,8 +687,15 @@ function openTest(invId) {
   testTitleEl.textContent = inv.name;
   testStatusEl.textContent = "";
   renderQuestions(invId);
-  homeScreenEl.classList.add("hidden");
-  testScreenEl.classList.remove("hidden");
+  questionCardEl.classList.remove("hidden");
+  questionCardEl.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function closeTest() {
+  currentInventoryId = null;
+  testQuestionsEl.innerHTML = "";
+  testStatusEl.textContent = "";
+  questionCardEl.classList.add("hidden");
 }
 
 testLaunchButtons.forEach((btn) => {
@@ -708,7 +706,7 @@ testLaunchButtons.forEach((btn) => {
 });
 
 cancelTestBtn.addEventListener("click", () => {
-  showHomeScreen();
+  closeTest();
 });
 
 // ==== SAVE TEST ====
@@ -751,8 +749,9 @@ saveTestBtn.addEventListener("click", () => {
   testStatusEl.textContent = `${inv.name} saved (raw score ${rawScore})`;
   testStatusEl.className = "status ok";
 
-  // Return to home after brief delay
-  setTimeout(showHomeScreen, 400);
+  setTimeout(() => {
+    closeTest();
+  }, 400);
 });
 
 // ==== HISTORY TABLE ====
