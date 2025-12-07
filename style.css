@@ -222,6 +222,28 @@ footer {
   justify-content: center;
 }
 
+.hidden {
+  display: none;
+}
+
+.test-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.test-grid .test-launch-btn {
+  flex: 1 1 45%;
+  text-align: center;
+}
+
+.test-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
 /* Small screens */
 
 @media (max-width: 600px) {
