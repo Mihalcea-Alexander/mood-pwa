@@ -95,7 +95,7 @@
           Date:
           <input type="date" id="event-date" />
         </label>
-        <label>
+        <label class="event-desc-label">
           Description:
           <input type="text" id="event-description" placeholder="Started medication, changed dose, etc." />
         </label>
@@ -150,12 +150,12 @@
         </thead>
         <tbody id="history-body"></tbody>
       </table>
-      <p class="hint">Tap a row to expand details and delete entries.</p>
+      <p class="hint">Tap a row to expand full details and optionally delete entries.</p>
     </section>
   </main>
 
   <footer>
-    <span style="font-size:0.75rem;color:#6b7280;">Data is stored only on this device (local storage).</span>
+    <span class="footer-note">Data is stored only on this device (local storage).</span>
   </footer>
 
   <script src="app.js"></script>
