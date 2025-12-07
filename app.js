@@ -13,9 +13,9 @@ const INVENTORIES = {
         text: "Little interest or pleasure in doing things",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Several days", value: 1 },
-          { label: "More than half the days", value: 2 },
-          { label: "Nearly every day", value: 3 },
+          { label: "Some of the time", value: 1 },
+          { label: "More than half the time", value: 2 },
+          { label: "Nearly all the time", value: 3 },
         ],
       },
       {
@@ -23,9 +23,9 @@ const INVENTORIES = {
         text: "Feeling down, depressed, or hopeless",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Several days", value: 1 },
-          { label: "More than half the days", value: 2 },
-          { label: "Nearly every day", value: 3 },
+          { label: "Some of the time", value: 1 },
+          { label: "More than half the time", value: 2 },
+          { label: "Nearly all the time", value: 3 },
         ],
       },
       {
@@ -33,9 +33,9 @@ const INVENTORIES = {
         text: "Trouble falling or staying asleep, or sleeping too much",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Several days", value: 1 },
-          { label: "More than half the days", value: 2 },
-          { label: "Nearly every day", value: 3 },
+          { label: "Some of the time", value: 1 },
+          { label: "More than half the time", value: 2 },
+          { label: "Nearly all the time", value: 3 },
         ],
       },
       {
@@ -43,9 +43,9 @@ const INVENTORIES = {
         text: "Feeling tired or having little energy",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Several days", value: 1 },
-          { label: "More than half the days", value: 2 },
-          { label: "Nearly every day", value: 3 },
+          { label: "Some of the time", value: 1 },
+          { label: "More than half the time", value: 2 },
+          { label: "Nearly all the time", value: 3 },
         ],
       },
       {
@@ -53,9 +53,9 @@ const INVENTORIES = {
         text: "Poor appetite or overeating",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Several days", value: 1 },
-          { label: "More than half the days", value: 2 },
-          { label: "Nearly every day", value: 3 },
+          { label: "Some of the time", value: 1 },
+          { label: "More than half the time", value: 2 },
+          { label: "Nearly all the time", value: 3 },
         ],
       },
       {
@@ -64,9 +64,9 @@ const INVENTORIES = {
           "Feeling bad about yourself or like you are a failure or have let yourself or your family down",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Several days", value: 1 },
-          { label: "More than half the days", value: 2 },
-          { label: "Nearly every day", value: 3 },
+          { label: "Some of the time", value: 1 },
+          { label: "More than half the time", value: 2 },
+          { label: "Nearly all the time", value: 3 },
         ],
       },
       {
@@ -74,9 +74,9 @@ const INVENTORIES = {
         text: "Trouble concentrating (reading, TV, etc.)",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Several days", value: 1 },
-          { label: "More than half the days", value: 2 },
-          { label: "Nearly every day", value: 3 },
+          { label: "Some of the time", value: 1 },
+          { label: "More than half the time", value: 2 },
+          { label: "Nearly all the time", value: 3 },
         ],
       },
       {
@@ -85,9 +85,9 @@ const INVENTORIES = {
           "Moving or speaking noticeably slower than usual, or feeling very restless and fidgety",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Several days", value: 1 },
-          { label: "More than half the days", value: 2 },
-          { label: "Nearly every day", value: 3 },
+          { label: "Some of the time", value: 1 },
+          { label: "More than half the time", value: 2 },
+          { label: "Nearly all the time", value: 3 },
         ],
       },
       {
@@ -95,9 +95,9 @@ const INVENTORIES = {
         text: "Thoughts you would be better off dead or of self-harm",
         options: [
           { label: "Not at all", value: 0 },
-          { label: "Several days", value: 1 },
-          { label: "More than half the days", value: 2 },
-          { label: "Nearly every day", value: 3 },
+          { label: "Some of the time", value: 1 },
+          { label: "More than half the time", value: 2 },
+          { label: "Nearly all the time", value: 3 },
         ],
       },
     ],
@@ -465,7 +465,7 @@ const INVENTORIES = {
 
   burns: {
     id: "burns",
-    name: "Burns Depression Checklist",
+    name: "Burns",
     maxTotal: 100,
     severityThresholds: [0, 5, 10, 25, 50, 75, 100],
     type: "simple_sum",
@@ -509,7 +509,7 @@ const INVENTORIES = {
 
   shaps: {
     id: "shaps",
-    name: "Snaith-Hamilton Pleasure Scale",
+    name: "SHAPS",
     maxTotal: 14,
     severityThresholds: [0, 2, 5, 9, 14],
     type: "shaps_dichotomous",
