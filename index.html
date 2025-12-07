@@ -5,14 +5,11 @@
   <title>Mood Inventories</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- PWA manifest -->
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#111827" />
 
-  <!-- Styles -->
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Chart.js + time adapter -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
@@ -23,71 +20,66 @@
   </header>
 
   <main>
-    <!-- HOME SCREEN -->
-    <section id="home-screen">
-      <!-- Test launcher -->
-      <section class="card">
-        <h2>Choose a Test</h2>
-        <p>Select an inventory to fill out a new entry.</p>
-        <div class="test-grid">
-          <button class="primary-btn test-launch-btn" data-inv="phq9">PHQ-9</button>
-          <button class="primary-btn test-launch-btn" data-inv="madrs">MADRS</button>
-          <button class="primary-btn test-launch-btn" data-inv="bdi2">BDI-II</button>
-          <button class="primary-btn test-launch-btn" data-inv="burns">Burns</button>
-          <button class="primary-btn test-launch-btn" data-inv="shaps">SHAPS</button>
-        </div>
-      </section>
-
-      <!-- Graph -->
-      <section class="card">
-        <h2>Scores Over Time</h2>
-        <div class="test-filters">
-          <label><input type="checkbox" class="test-filter" value="phq9" checked /> PHQ-9</label>
-          <label><input type="checkbox" class="test-filter" value="madrs" checked /> MADRS</label>
-          <label><input type="checkbox" class="test-filter" value="bdi2" checked /> BDI-II</label>
-          <label><input type="checkbox" class="test-filter" value="burns" checked /> Burns</label>
-          <label><input type="checkbox" class="test-filter" value="shaps" checked /> SHAPS</label>
-        </div>
-        <div class="chart-wrap">
-          <canvas id="scores-chart"></canvas>
-        </div>
-        <p class="hint">
-          Y-axis is severity-normalized: a “moderate” score on any scale lines up with “moderate” on others. Hover points for raw scores.
-        </p>
-      </section>
-
-      <!-- History -->
-      <section class="card">
-        <h2>History</h2>
-        <table id="history-table">
-          <thead>
-            <tr>
-              <th>Date/Time</th>
-              <th>Test</th>
-              <th>Raw Score</th>
-              <th>Details</th>
-            </tr>
-          </thead>
-          <tbody id="history-body"></tbody>
-        </table>
-      </section>
+    <!-- Selector / launcher -->
+    <section class="card">
+      <h2>Choose a Test</h2>
+      <p>Select an inventory to fill out a new entry.</p>
+      <div class="test-grid">
+        <button class="primary-btn test-launch-btn" data-inv="phq9">PHQ-9</button>
+        <button class="primary-btn test-launch-btn" data-inv="madrs">MADRS</button>
+        <button class="primary-btn test-launch-btn" data-inv="bdi2">BDI-II</button>
+        <button class="primary-btn test-launch-btn" data-inv="burns">Burns</button>
+        <button class="primary-btn test-launch-btn" data-inv="shaps">SHAPS</button>
+      </div>
     </section>
 
-    <!-- TEST SCREEN -->
-    <section id="test-screen" class="hidden">
-      <section class="card">
-        <h2 id="test-title">Test</h2>
-        <p id="test-subtitle" class="hint">Answer all questions below.</p>
+    <!-- Question window: directly under selector -->
+    <section class="card hidden" id="question-card">
+      <h2 id="test-title">Test</h2>
+      <p id="test-subtitle" class="hint">Answer all questions below.</p>
 
-        <div id="test-questions"></div>
+      <div id="test-questions"></div>
 
-        <div class="test-actions">
-          <button id="save-test-btn" class="primary-btn">Save</button>
-          <button id="cancel-test-btn" class="secondary-btn">Cancel</button>
-        </div>
+      <div class="test-actions">
+        <button id="save-test-btn" class="primary-btn">Save</button>
+        <button id="cancel-test-btn" class="secondary-btn">Cancel</button>
+      </div>
 
-        <p id="test-status" class="status"></p>
-      </section>
+      <p id="test-status" class="status"></p>
+    </section>
+
+    <!-- Graph -->
+    <section class="card">
+      <h2>Scores Over Time</h2>
+      <div class="test-filters">
+        <label><input type="checkbox" class="test-filter" value="phq9" checked /> PHQ-9</label>
+        <label><input type="checkbox" class="test-filter" value="madrs" checked /> MADRS</label>
+        <label><input type="checkbox" class="test-filter" value="bdi2" checked /> BDI-II</label>
+        <label><input type="checkbox" class="test-filter" value="burns" checked /> Burns</label>
+        <label><input type="checkbox" class="test-filter" value="shaps" checked /> SHAPS</label>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="scores-chart"></canvas>
+      </div>
+      <p class="hint">
+        Y-axis is severity-normalized: a “moderate” score on any scale lines up with “moderate” on others. Hover points for raw scores.
+      </p>
+    </section>
+
+    <!-- History -->
+    <section class="card">
+      <h2>History</h2>
+      <table id="history-table">
+        <thead>
+          <tr>
+            <th>Date/Time</th>
+            <th>Test</th>
+            <th>Raw Score</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
     </section>
   </main>
 
