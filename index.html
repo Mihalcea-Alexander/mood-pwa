@@ -12,8 +12,9 @@
   <!-- Styles -->
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Chart.js -->
+  <!-- Chart.js and time adapter -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
 <body>
   <header>
@@ -22,140 +23,124 @@
   </header>
 
   <main>
-    <!-- Choose test -->
+    <!-- Selector / launcher -->
     <section class="card">
       <h2>Choose a Test</h2>
-      <div class="test-buttons">
+      <p>Select an inventory to fill out a new entry.</p>
+      <div class="test-grid">
         <button class="primary-btn test-launch-btn" data-inv="phq9">PHQ-9</button>
         <button class="primary-btn test-launch-btn" data-inv="madrs">MADRS</button>
         <button class="primary-btn test-launch-btn" data-inv="bdi2">BDI-II</button>
         <button class="primary-btn test-launch-btn" data-inv="burns">BURNS</button>
         <button class="primary-btn test-launch-btn" data-inv="shaps">SHAPS</button>
       </div>
-      <p class="hint">Tap a test, answer all questions, then save.</p>
     </section>
 
-    <!-- Test card (sits between choose + graph) -->
+    <!-- Question window: directly under selector -->
     <section class="card hidden" id="question-card">
       <h2 id="test-title">Test</h2>
+      <p id="test-subtitle" class="hint">Answer all questions below.</p>
+
       <div id="test-questions"></div>
-      <div class="question-actions">
-        <button id="save-test-btn" class="primary-btn">Save Test</button>
+
+      <div class="test-actions">
+        <button id="save-test-btn" class="primary-btn">Save</button>
         <button id="cancel-test-btn" class="secondary-btn">Cancel</button>
       </div>
+
       <p id="test-status" class="status"></p>
     </section>
 
     <!-- Graph -->
     <section class="card">
       <h2>Scores Over Time</h2>
-
       <div class="test-filters">
-        <label><input type="checkbox" class="test-filter" value="phq9" checked> PHQ-9</label>
-        <label><input type="checkbox" class="test-filter" value="madrs" checked> MADRS</label>
-        <label><input type="checkbox" class="test-filter" value="bdi2" checked> BDI-II</label>
-        <label><input type="checkbox" class="test-filter" value="burns" checked> BURNS</label>
-        <label><input type="checkbox" class="test-filter" value="shaps" checked> SHAPS</label>
-        <label><input type="checkbox" id="avg-toggle"> AVG</label>
+        <label><input type="checkbox" class="test-filter" value="phq9" checked /> PHQ-9</label>
+        <label><input type="checkbox" class="test-filter" value="madrs" checked /> MADRS</label>
+        <label><input type="checkbox" class="test-filter" value="bdi2" checked /> BDI-II</label>
+        <label><input type="checkbox" class="test-filter" value="burns" checked /> BURNS</label>
+        <label><input type="checkbox" class="test-filter" value="shaps" checked /> SHAPS</label>
+        <label><input type="checkbox" id="avg-toggle" /> AVG</label>
       </div>
-
-      <div class="forecast-controls">
-        <label class="forecast-toggle-label">
-          <input type="checkbox" id="forecast-toggle">
-          Forecast (uses AVG)
-        </label>
-        <div class="forecast-inputs">
-          <label>
-            Lookback days
-            <input type="number" id="forecast-lookback" value="30" min="2" max="3650">
-          </label>
-          <label>
-            Horizon days
-            <input type="number" id="forecast-horizon" value="14" min="1" max="365">
-          </label>
-        </div>
-      </div>
-
       <div class="chart-wrap">
         <canvas id="scores-chart"></canvas>
       </div>
       <p class="hint">
-        Y-axis is severity-normalized (0–1). AVG/forecast use checked scales only.
-        Forecast shows dotted line with ±1 SD yellow band.
+        Y-axis is severity-normalized: a “moderate” score on any scale lines up with “moderate” on others. Hover points for raw scores.
       </p>
-    </section>
 
-    <!-- Events, manual, import/export -->
-    <section class="card">
-      <h2>Key Events & Manual Entries</h2>
-
-      <h3>Key events</h3>
+      <!-- Key time points -->
       <div class="event-form">
-        <label>
-          Date
-          <input type="date" id="event-date">
-        </label>
-        <label class="grow">
-          Description
-          <input type="text" id="event-description" placeholder="Started medication, dose change, etc.">
-        </label>
-        <button id="add-event-btn" class="secondary-btn">Add event</button>
-      </div>
-      <p id="event-status" class="status"></p>
-
-      <h3>Manual score</h3>
-      <div class="manual-form">
-        <label>
-          Test
-          <select id="manual-test-select">
-            <option value="phq9">PHQ-9</option>
-            <option value="madrs">MADRS</option>
-            <option value="bdi2">BDI-II</option>
-            <option value="burns">BURNS</option>
-            <option value="shaps">SHAPS</option>
-          </select>
-        </label>
-        <label>
-          Date
-          <input type="date" id="manual-date">
-        </label>
-        <label>
-          Raw score
-          <input type="number" id="manual-score">
-        </label>
-        <button id="manual-add-btn" class="secondary-btn">Add score</button>
-      </div>
-      <p id="manual-status" class="status"></p>
-
-      <h3>Export / import</h3>
-      <div class="io-row">
-        <button id="export-json" class="secondary-btn">Export JSON</button>
-        <button id="import-json" class="secondary-btn">Import JSON</button>
-        <input id="import-file" type="file" accept="application/json" style="display:none">
-        <a id="download-link" style="display:none"></a>
+        <h3>Add key time point</h3>
+        <div class="event-row">
+          <label>
+            Date
+            <input type="date" id="event-date" />
+          </label>
+          <label class="event-desc-label">
+            Description
+            <input
+              type="text"
+              id="event-description"
+              placeholder="e.g. Started medication"
+            />
+          </label>
+          <button id="add-event-btn" class="secondary-btn">Add</button>
+        </div>
+        <p id="event-status" class="status"></p>
       </div>
     </section>
 
     <!-- History -->
     <section class="card">
       <h2>History</h2>
+
+      <!-- Manual score entry -->
+      <div class="manual-add">
+        <h3>Manual score entry</h3>
+        <div class="manual-row">
+          <label>
+            Test
+            <select id="manual-test-select">
+              <option value="phq9">PHQ-9</option>
+              <option value="madrs">MADRS</option>
+              <option value="bdi2">BDI-II</option>
+              <option value="burns">BURNS</option>
+              <option value="shaps">SHAPS</option>
+            </select>
+          </label>
+          <label>
+            Date
+            <input type="date" id="manual-date" />
+          </label>
+          <label>
+            Raw score
+            <input type="number" id="manual-score" min="0" step="1" />
+          </label>
+          <button id="manual-add-btn" class="secondary-btn">Add</button>
+        </div>
+        <p id="manual-status" class="status"></p>
+      </div>
+
       <table id="history-table">
         <thead>
           <tr>
             <th>Date/Time</th>
             <th>Test / Event</th>
-            <th>Raw</th>
+            <th>Raw Score</th>
             <th>Details</th>
           </tr>
         </thead>
         <tbody id="history-body"></tbody>
       </table>
-      <p class="hint">Tap a row to expand details and delete.</p>
     </section>
   </main>
 
   <footer>
-    <span class="footer-text">Data is stored only on this device (localStorage).</span>
+    <button id="export-json" class="secondary-btn">Export data (JSON)</button>
+    <button id="import-json" class="secondary-btn">Import JSON</button>
+    <input type="file" id="import-file" accept="application/json" style="display:none" />
+    <a id="download-link" style="display:none"></a>
   </footer>
 
   <script src="app.js"></script>
