@@ -694,12 +694,6 @@ const manualStatusEl = document.getElementById("manual-status");
 
 // AVG toggle
 const avgToggle = document.getElementById("avg-toggle");
-const forecastControlsEl = document.getElementById("forecast-controls");
-const forecastToggle = document.getElementById("forecast-toggle");
-const forecastFieldsEl = document.getElementById("forecast-fields");
-const forecastPastInput = document.getElementById("forecast-past-days");
-const forecastFutureInput = document.getElementById("forecast-future-days");
-const forecastMethodSelect = document.getElementById("forecast-method");
 
 let entries = loadEntries();
 let currentInventoryId = null;
@@ -1065,259 +1059,6 @@ const LABEL_MAP = {
   shaps: "SHAPS",
 };
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-function clamp01(v) {
-  if (!Number.isFinite(v)) return 0;
-  return Math.min(1, Math.max(0, v));
-}
-
-function xToMs(x) {
-  if (x instanceof Date) return x.getTime();
-  if (typeof x === "number") return x;
-  const t = new Date(x).getTime();
-  return Number.isFinite(t) ? t : 0;
-}
-
-function stddev(values) {
-  if (!values || values.length === 0) return 0;
-  const mean =
-    values.reduce((sum, val) => sum + (Number(val) || 0), 0) /
-    values.length;
-  const variance =
-    values.reduce((acc, val) => acc + (val - mean) * (val - mean), 0) /
-    Math.max(1, values.length - 1);
-  return Math.sqrt(Math.max(variance, 0));
-}
-
-function forecastMethodLabel(method) {
-  switch (method) {
-    case "linear":
-      return "Linear regression";
-    case "poly":
-      return "Power series fit";
-    case "smoothing":
-      return "Exponential smoothing";
-    default:
-      return "Forecast";
-  }
-}
-
-function solvePoly2(xs, ys) {
-  if (!xs.length || xs.length !== ys.length) return null;
-  let s0 = xs.length;
-  let s1 = 0;
-  let s2 = 0;
-  let s3 = 0;
-  let s4 = 0;
-  let t0 = 0;
-  let t1 = 0;
-  let t2 = 0;
-
-  for (let i = 0; i < xs.length; i++) {
-    const x = xs[i];
-    const y = ys[i];
-    const x2 = x * x;
-    const x3 = x2 * x;
-    const x4 = x2 * x2;
-    s1 += x;
-    s2 += x2;
-    s3 += x3;
-    s4 += x4;
-    t0 += y;
-    t1 += x * y;
-    t2 += x2 * y;
-  }
-
-  const A = [
-    [s0, s1, s2],
-    [s1, s2, s3],
-    [s2, s3, s4],
-  ];
-  const B = [t0, t1, t2];
-
-  // Gaussian elimination
-  for (let col = 0; col < 3; col++) {
-    let pivot = col;
-    for (let r = col + 1; r < 3; r++) {
-      if (Math.abs(A[r][col]) > Math.abs(A[pivot][col])) pivot = r;
-    }
-    if (Math.abs(A[pivot][col]) < 1e-9) return null;
-    if (pivot !== col) {
-      [A[pivot], A[col]] = [A[col], A[pivot]];
-      [B[pivot], B[col]] = [B[col], B[pivot]];
-    }
-
-    const div = A[col][col];
-    for (let c = col; c < 3; c++) A[col][c] /= div;
-    B[col] /= div;
-
-    for (let r = 0; r < 3; r++) {
-      if (r === col) continue;
-      const factor = A[r][col];
-      for (let c = col; c < 3; c++) A[r][c] -= factor * A[col][c];
-      B[r] -= factor * B[col];
-    }
-  }
-
-  return B;
-}
-
-function buildForecast(avgData, settings) {
-  if (!avgData || avgData.length < 2) return null;
-
-  const sorted = [...avgData].sort((a, b) => a.x - b.x);
-  const lastTime = sorted[sorted.length - 1].x.getTime();
-  const cutoff = lastTime - settings.pastDays * MS_PER_DAY;
-  const training = sorted.filter((p) => p.x.getTime() >= cutoff);
-
-  if (training.length < 2) return null;
-
-  const baseTime = training[0].x.getTime();
-  const xs = training.map((p) => (p.x.getTime() - baseTime) / MS_PER_DAY);
-  const ys = training.map((p) => p.y);
-
-  let fitted = [];
-  let predictor;
-
-  if (settings.method === "poly") {
-    const coeffs = solvePoly2(xs, ys);
-    if (coeffs) {
-      predictor = (x) => coeffs[0] + coeffs[1] * x + coeffs[2] * x * x;
-      fitted = xs.map((x) => predictor(x));
-    }
-  }
-
-  if (!predictor && settings.method === "smoothing") {
-    const alpha = 0.35;
-    let smoothed = ys[0];
-    let prev = smoothed;
-    fitted = [smoothed];
-    for (let i = 1; i < ys.length; i++) {
-      const next = alpha * ys[i] + (1 - alpha) * smoothed;
-      prev = smoothed;
-      smoothed = next;
-      fitted.push(smoothed);
-    }
-    const lastSlope = smoothed - prev;
-    const lastX = xs[xs.length - 1];
-    predictor = (x) => smoothed + lastSlope * (x - lastX);
-  }
-
-  if (!predictor) {
-    const meanX = xs.reduce((a, b) => a + b, 0) / xs.length;
-    const meanY = ys.reduce((a, b) => a + b, 0) / ys.length;
-    let num = 0;
-    let den = 0;
-    xs.forEach((x, idx) => {
-      num += (x - meanX) * (ys[idx] - meanY);
-      den += (x - meanX) * (x - meanX);
-    });
-    const slope = den ? num / den : 0;
-    const intercept = meanY - slope * meanX;
-    predictor = (x) => intercept + slope * x;
-    fitted = xs.map((x) => predictor(x));
-  }
-
-  const residuals = ys.map((y, idx) => y - (fitted[idx] ?? y));
-  const baseStd = Math.max(0.015, stddev(residuals));
-  const spreadStd = Math.max(0.01, stddev(ys));
-  const maxY = Math.max(...ys);
-  const minY = Math.min(...ys);
-  const lastPoint = training[training.length - 1];
-  const lastX = xs[xs.length - 1];
-  let lastForecastY = lastPoint.y;
-
-  const meanSeries = [
-    { x: lastPoint.x, y: lastPoint.y, isForecast: true },
-  ];
-  const upperSeries = [
-    { x: lastPoint.x, y: lastPoint.y, isForecastBand: true },
-  ];
-  const lowerSeries = [
-    { x: lastPoint.x, y: lastPoint.y, isForecastBand: true },
-  ];
-
-  for (let step = 1; step <= settings.futureDays; step++) {
-    const xVal = lastX + step;
-    const time = lastPoint.x.getTime() + step * MS_PER_DAY;
-    const rawPredicted = predictor(xVal);
-    const growth = rawPredicted - lastForecastY;
-    const damp = 1 / (1 + 0.08 * step); // progressively flatten further-out steps
-    let predicted = lastForecastY + growth * damp;
-
-    const upperCap = Math.min(0.97, maxY + 2 * spreadStd);
-    const lowerCap = Math.max(0, minY - 2 * spreadStd);
-    if (predicted > upperCap) {
-      predicted = upperCap - (predicted - upperCap) * 0.3;
-    } else if (predicted < lowerCap) {
-      predicted = lowerCap + (lowerCap - predicted) * 0.3;
-    }
-
-    predicted = clamp01(predicted);
-    lastForecastY = predicted;
-    const sigma = baseStd * Math.sqrt(step);
-
-    meanSeries.push({
-      x: new Date(time),
-      y: predicted,
-      isForecast: true,
-    });
-    upperSeries.push({
-      x: new Date(time),
-      y: clamp01(predicted + sigma),
-      isForecastBand: true,
-    });
-    lowerSeries.push({
-      x: new Date(time),
-      y: clamp01(predicted - sigma),
-      isForecastBand: true,
-    });
-  }
-
-  return { meanSeries, upperSeries, lowerSeries };
-}
-
-function syncForecastUI() {
-  const avgOn = !!(avgToggle && avgToggle.checked);
-  if (forecastControlsEl) {
-    forecastControlsEl.classList.toggle("hidden", !avgOn);
-  }
-  if (!avgOn && forecastToggle) {
-    forecastToggle.checked = false;
-  }
-
-  const forecastOn = !!(
-    avgOn && forecastToggle && forecastToggle.checked
-  );
-  if (forecastFieldsEl) {
-    forecastFieldsEl.classList.toggle("hidden", !forecastOn);
-  }
-}
-
-function getForecastSettings() {
-  const pastDaysRaw = Number(forecastPastInput?.value);
-  const futureDaysRaw = Number(forecastFutureInput?.value);
-
-  const pastDays = Math.max(
-    7,
-    Math.min(365, Number.isFinite(pastDaysRaw) ? pastDaysRaw : 10)
-  );
-  const futureDays = Math.max(
-    1,
-    Math.min(180, Number.isFinite(futureDaysRaw) ? futureDaysRaw : 10)
-  );
-
-  if (forecastPastInput) forecastPastInput.value = pastDays;
-  if (forecastFutureInput) forecastFutureInput.value = futureDays;
-
-  return {
-    pastDays,
-    futureDays,
-    method: forecastMethodSelect?.value || "linear",
-  };
-}
-
 function hexToRgba(hex, alpha) {
   if (!hex) return `rgba(249, 115, 22, ${alpha})`;
   hex = hex.replace("#", "");
@@ -1392,7 +1133,7 @@ const chart = new Chart(ctx, {
           color: "#e5e7eb",
           filter: (item, data) => {
             const ds = data.datasets[item.datasetIndex];
-            return !ds.isEvent && !ds.isBand; // hide Events + forecast bands
+            return !ds.isEvent; // hide Events dataset
           },
         },
       },
@@ -1401,17 +1142,9 @@ const chart = new Chart(ctx, {
           label: (ctx) => {
             const d = ctx.raw;
 
-            if (ctx.dataset && ctx.dataset.isBand) return "";
-
             if (d && d.eventDescription) {
               const dt = new Date(d.x);
               return `Event: ${d.eventDescription} (${dt.toLocaleDateString()})`;
-            }
-
-            if (d && d.isForecast) {
-              const dt = new Date(d.x);
-              const methodLabel = ctx.dataset?.methodLabel || "Forecast";
-              return `${methodLabel}: ${d.y.toFixed(2)} (${dt.toLocaleDateString()})`;
             }
 
             if (d && d.isAvg) {
@@ -1442,9 +1175,6 @@ function updateChart() {
     .map((c) => c.value);
 
   const avgActive = !!(avgToggle && avgToggle.checked);
-  const forecastActive =
-    avgActive && forecastToggle && forecastToggle.checked;
-  const forecastSettings = forecastActive ? getForecastSettings() : null;
 
   // Score datasets
   const scoreDatasets = activeIds.map((invId) => {
@@ -1492,8 +1222,6 @@ function updateChart() {
 
   // AVG dataset across all active inventories (by day)
   let avgDataset = null;
-  let avgData = [];
-  let analysisStartTime = null;
   if (avgActive && activeIds.length > 0) {
     const byDay = new Map(); // key: YYYY-MM-DD -> {sum, count}
     entries
@@ -1510,7 +1238,7 @@ function updateChart() {
         obj.count += 1;
       });
 
-    avgData = Array.from(byDay.entries())
+    const avgData = Array.from(byDay.entries())
       .map(([key, { sum, count }]) => ({
         x: new Date(key + "T12:00:00"),
         y: sum / count,
@@ -1518,115 +1246,15 @@ function updateChart() {
       }))
       .sort((a, b) => a.x - b.x);
 
-    if (forecastActive && avgData.length) {
-      const lastTime = avgData[avgData.length - 1].x.getTime();
-      analysisStartTime = lastTime - forecastSettings.pastDays * MS_PER_DAY;
-    }
-
-    if (
-      forecastActive &&
-      analysisStartTime !== null &&
-      avgData.length >= 2
-    ) {
-      const firstTime = avgData[0].x.getTime();
-      const lastTime = avgData[avgData.length - 1].x.getTime();
-      if (analysisStartTime > firstTime && analysisStartTime < lastTime) {
-        let insertIdx = avgData.findIndex(
-          (p) => p.x.getTime() >= analysisStartTime
-        );
-        if (insertIdx === -1) insertIdx = avgData.length;
-        const alreadyAtBoundary =
-          avgData[insertIdx] &&
-          avgData[insertIdx].x.getTime() === analysisStartTime;
-        if (!alreadyAtBoundary) {
-          const prev = avgData[insertIdx - 1];
-          const next = avgData[insertIdx];
-          let yVal = prev ? prev.y : next?.y || 0;
-          if (prev && next) {
-            const range = next.x.getTime() - prev.x.getTime();
-            const offset = analysisStartTime - prev.x.getTime();
-            const ratio = range ? offset / range : 0;
-            yVal = prev.y + (next.y - prev.y) * ratio;
-          }
-          avgData.splice(insertIdx, 0, {
-            x: new Date(analysisStartTime),
-            y: yVal,
-            isAvg: true,
-            isAnalysisStart: true,
-          });
-        }
-      }
-    }
-
     if (avgData.length) {
-      const baseColor = "#facc15";
-      const fadedColor = "rgba(250, 204, 21, 0.5)";
-      const colorForX = (xVal) => {
-        if (!Number.isFinite(xVal)) return baseColor;
-        if (!forecastActive || analysisStartTime === null) return baseColor;
-        return xVal >= analysisStartTime ? baseColor : fadedColor;
-      };
-      const pointColor = (ctx) =>
-        colorForX(xToMs(ctx.raw?.x ?? ctx.parsed?.x));
-      const segmentColor = (ctx) =>
-        colorForX(xToMs(ctx.p0?.raw?.x ?? ctx.p0?.parsed?.x));
       avgDataset = {
         label: "AVG",
         data: avgData,
-        borderColor: forecastActive ? pointColor : baseColor,
-        backgroundColor: baseColor,
-        borderWidth: 2,
-        pointRadius: 3,
-        pointBackgroundColor: forecastActive ? pointColor : baseColor,
-        pointBorderColor: forecastActive ? pointColor : baseColor,
-        segment: forecastActive ? { borderColor: segmentColor } : undefined,
-      };
-    }
-  }
-
-  // Forecast dataset based on AVG points
-  let forecastDatasets = [];
-  if (forecastActive && avgData.length >= 2) {
-    const forecastResult = buildForecast(avgData, forecastSettings);
-    if (forecastResult) {
-      const methodLabel = forecastMethodLabel(forecastSettings.method);
-      const lowerBand = {
-        label: "Forecast lower",
-        data: forecastResult.lowerSeries,
-        borderColor: "rgba(0,0,0,0)",
-        backgroundColor: "rgba(0,0,0,0)",
-        pointRadius: 0,
-        pointHitRadius: 0,
-        tension: 0.25,
-        fill: false,
-        isBand: true,
-      };
-      const upperBand = {
-        label: "Forecast range",
-        data: forecastResult.upperSeries,
-        borderColor: "rgba(0,0,0,0)",
-        backgroundColor: "rgba(250, 204, 21, 0.16)",
-        pointRadius: 0,
-        pointHitRadius: 0,
-        tension: 0.25,
-        fill: "-1",
-        isBand: true,
-      };
-      const forecastLine = {
-        label: `Forecast (${methodLabel})`,
-        data: forecastResult.meanSeries,
         borderColor: "#facc15",
         backgroundColor: "#facc15",
-        borderDash: [6, 4],
         borderWidth: 2,
-        pointRadius: 0,
-        pointHitRadius: 4,
-        fill: false,
-        tension: 0.25,
-        isForecast: true,
-        methodLabel,
+        pointRadius: 3,
       };
-      forecastDatasets = [lowerBand, upperBand, forecastLine];
     }
   }
 
@@ -1634,7 +1262,6 @@ function updateChart() {
 
   const datasets = [...scoreDatasets];
   if (avgDataset) datasets.push(avgDataset);
-  if (forecastDatasets.length) datasets.push(...forecastDatasets);
   if (eventDataset) datasets.push(eventDataset);
 
   chart.data.datasets = datasets;
@@ -1657,7 +1284,7 @@ function updateChart() {
   });
 
   if (minX !== null && maxX !== null) {
-    const pad = 0.5 * MS_PER_DAY; // half-day padding on each side
+    const pad = 0.5 * 24 * 60 * 60 * 1000; // half-day padding on each side
     chart.options.scales.x.min = minX - pad;
     chart.options.scales.x.max = maxX + pad;
   } else {
@@ -1674,25 +1301,8 @@ filterCheckboxes.forEach((cb) =>
 );
 
 if (avgToggle) {
-  avgToggle.addEventListener("change", () => {
-    syncForecastUI();
-    updateChart();
-  });
+  avgToggle.addEventListener("change", updateChart);
 }
-
-if (forecastToggle) {
-  forecastToggle.addEventListener("change", () => {
-    syncForecastUI();
-    updateChart();
-  });
-}
-
-[forecastPastInput, forecastFutureInput, forecastMethodSelect].forEach(
-  (el) => {
-    if (!el) return;
-    el.addEventListener("change", updateChart);
-  }
-);
 
 // ==== EXPORT JSON ====
 
@@ -1789,7 +1399,6 @@ importInput.addEventListener("change", (e) => {
 
 // ==== INIT ====
 
-syncForecastUI();
 renderHistory();
 updateChart();
 
