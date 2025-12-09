@@ -62,6 +62,30 @@
         <label><input type="checkbox" class="test-filter" value="shaps" checked /> SHAPS</label>
         <label><input type="checkbox" id="avg-toggle" /> AVG</label>
       </div>
+      <div class="forecast-controls hidden" id="forecast-controls">
+        <label class="forecast-toggle">
+          <input type="checkbox" id="forecast-toggle" />
+          Forecast
+        </label>
+        <div class="forecast-fields hidden" id="forecast-fields">
+          <label>
+            Days to analyze
+            <input type="number" id="forecast-past-days" min="7" max="365" value="60" />
+          </label>
+          <label>
+            Days to project
+            <input type="number" id="forecast-future-days" min="1" max="180" value="30" />
+          </label>
+          <label>
+            Method
+            <select id="forecast-method">
+              <option value="linear">Linear regression</option>
+              <option value="mean">Rolling mean</option>
+              <option value="smoothing">Exponential smoothing</option>
+            </select>
+          </label>
+        </div>
+      </div>
       <div class="chart-wrap">
         <canvas id="scores-chart"></canvas>
       </div>
