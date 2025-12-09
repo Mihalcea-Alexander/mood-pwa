@@ -1072,6 +1072,13 @@ function clamp01(v) {
   return Math.min(1, Math.max(0, v));
 }
 
+function xToMs(x) {
+  if (x instanceof Date) return x.getTime();
+  if (typeof x === "number") return x;
+  const t = new Date(x).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
 function stddev(values) {
   if (!values || values.length === 0) return 0;
   const mean =
@@ -1280,7 +1287,9 @@ function syncForecastUI() {
     forecastToggle.checked = false;
   }
 
-  const forecastOn = avgOn && forecastToggle && forecastToggle.checked;
+  const forecastOn = !!(
+    avgOn && forecastToggle && forecastToggle.checked
+  );
   if (forecastFieldsEl) {
     forecastFieldsEl.classList.toggle("hidden", !forecastOn);
   }
@@ -1557,21 +1566,20 @@ function updateChart() {
         if (!forecastActive || analysisStartTime === null) return baseColor;
         return xVal >= analysisStartTime ? baseColor : fadedColor;
       };
+      const pointColor = (ctx) =>
+        colorForX(xToMs(ctx.raw?.x ?? ctx.parsed?.x));
+      const segmentColor = (ctx) =>
+        colorForX(xToMs(ctx.p0?.raw?.x ?? ctx.p0?.parsed?.x));
       avgDataset = {
         label: "AVG",
         data: avgData,
-        borderColor: baseColor,
+        borderColor: forecastActive ? pointColor : baseColor,
         backgroundColor: baseColor,
         borderWidth: 2,
         pointRadius: 3,
-        pointBackgroundColor: forecastActive
-          ? (ctx) => colorForX(ctx.parsed.x)
-          : baseColor,
-        segment: forecastActive
-          ? {
-              borderColor: (ctx) => colorForX(ctx.p0.parsed.x),
-            }
-          : undefined,
+        pointBackgroundColor: forecastActive ? pointColor : baseColor,
+        pointBorderColor: forecastActive ? pointColor : baseColor,
+        segment: forecastActive ? { borderColor: segmentColor } : undefined,
       };
     }
   }
